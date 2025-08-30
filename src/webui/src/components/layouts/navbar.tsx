@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/navigation-menu.tsx";
 import { NavLink } from "react-router";
 import { paths } from "@/config/paths.ts";
-import ToggleThemeButton from "@/components/toggle-theme.tsx";
+import ToggleThemeButton from "@/components/theme/toggle-theme.tsx";
 import { Button } from "@/components/ui/button.tsx";
 
 export const Navbar = () => {

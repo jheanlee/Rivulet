@@ -9,21 +9,17 @@ export const paths = {
       getHref: () => "/",
     },
     media: {
-      root: {
-        path: "media",
-        getHref: () => "/media",
+      music: {
+        path: "media/music",
+        getHref: () => "/media/music",
       },
       movies: {
-        path: "/movies",
+        path: "media/movies",
         getHref: () => "/media/movies",
       },
       videos: {
-        path: "/videos",
+        path: "media/videos",
         getHref: () => "/media/videos",
-      },
-      music: {
-        path: "/music",
-        getHref: () => "/media/music",
       },
     },
     login: {
