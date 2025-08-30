@@ -50,7 +50,6 @@ export const LoginForm = () => {
 
   const onSummit = (values: z.infer<typeof formSchema>) => {
     //TODO
-    console.log(values);
   };
 
   return (

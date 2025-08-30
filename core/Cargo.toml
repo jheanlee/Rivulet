@@ -1,0 +1,12 @@
+[package]
+name = "Rivulet"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.98"
+axum = "0.8.4"
+clap = { version = "4.5.43", features = ["derive"] }
+nanoid = "0.4.0"
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "fs", "sync", "process"] }
+tower-http = { version = "0.6.6", features = ["fs"] }
