@@ -10,9 +10,21 @@ impl MigrationTrait for Migration {
     manager
       .create_table(
         Table::create()
+          .table(User::Table)
+          .if_not_exists()
+          .col(string_len_uniq(User::Id, 21).primary_key()) //  nanoid
+          .col(text_uniq(User::Username))
+          .col(text(User::HashedPassword))
+          .col(text(User::Salt))
+          .col(boolean(User::Administrator))
+          .to_owned()
+      ).await?;
+    manager
+      .create_table(
+        Table::create()
           .table(Music::Table)
           .if_not_exists()
-          .col(pk_auto(Music::Id))
+          .col(string_len_uniq(Music::Id, 21).primary_key())  //  nanoid
           .col(text(Music::Title))
           .col(array(Music::Artists, Text))
           .col(array(Music::Genres, Text))
@@ -35,7 +47,7 @@ impl MigrationTrait for Migration {
         Table::create()
           .table(MusicPlaylist::Table)
           .if_not_exists()
-          .col(pk_auto(MusicPlaylist::Id))
+          .col(string_len_uniq(MusicPlaylist::Id, 21).primary_key())  //  nanoid
           .col(text(MusicPlaylist::Title))
           .col(array(MusicPlaylist::Artists, Text))
           .col(array(MusicPlaylist::Genres, Text))
@@ -52,7 +64,7 @@ impl MigrationTrait for Migration {
         Table::create()
           .table(Video::Table)
           .if_not_exists()
-          .col(pk_auto(Video::Id))
+          .col(string_len_uniq(Video::Id, 21).primary_key())  //  nanoid
           .col(text(Video::Title))
           .col(text(Video::Creator))
           .col(array(Video::Categories, Text))
@@ -68,7 +80,7 @@ impl MigrationTrait for Migration {
         Table::create()
           .table(Movie::Table)
           .if_not_exists()
-          .col(pk_auto(Movie::Id))
+          .col(string_len_uniq(Movie::Id, 21).primary_key())  //  nanoid
           .col(text(Movie::Title))
           .col(text(Movie::Director))
           .col(array(Movie::Cast, Text))
@@ -92,6 +104,16 @@ impl MigrationTrait for Migration {
     manager.drop_table(Table::drop().table(Movie::Table).to_owned()).await?;
     Ok(())
   }
+}
+
+#[derive(DeriveIden)]
+enum User {
+  Table,
+  Id, 
+  Username,
+  HashedPassword,
+  Salt,
+  Administrator,
 }
 
 #[derive(DeriveIden)]

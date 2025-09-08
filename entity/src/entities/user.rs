@@ -3,24 +3,17 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "video")]
+#[sea_orm(table_name = "user")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: String,
+    #[sea_orm(column_type = "Text", unique)]
+    pub username: String,
     #[sea_orm(column_type = "Text")]
-    pub title: String,
+    pub hashed_password: String,
     #[sea_orm(column_type = "Text")]
-    pub creator: String,
-    pub categories: Vec<String>,
-    #[sea_orm(column_type = "Text")]
-    pub language: String,
-    #[sea_orm(column_type = "Text")]
-    pub region: String,
-    pub date_added: Date,
-    #[sea_orm(column_type = "Text")]
-    pub description: String,
-    #[sea_orm(column_type = "Text")]
-    pub storage_path: String,
+    pub salt: String,
+    pub administrator: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
