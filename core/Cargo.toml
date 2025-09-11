@@ -1,5 +1,5 @@
 [package]
-name = "Rivulet"
+name = "core"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,3 +12,13 @@ clap = { version = "4.5.43", features = ["derive"] }
 nanoid = "0.4.0"
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "fs", "sync", "process"] }
 tower-http = { version = "0.6.6", features = ["fs"] }
+jsonwebtoken = "9.3.1"
+serde = { version = "1.0.219", features = ["derive"] }
+chrono = "0.4.41"
+log = "0.4.27"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+oslog = "0.2.0"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+syslog = "7.0.0"

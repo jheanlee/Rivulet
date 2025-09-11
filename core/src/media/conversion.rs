@@ -1,9 +1,9 @@
 use nanoid::nanoid;
-use crate::SHARED;
+use crate::CONFIG;
 
-pub async fn convert(media_path: String) -> Result<String, anyhow::Error> {
+pub async fn convert_video(media_path: String) -> Result<String, anyhow::Error> {
   let stream_id = nanoid!();
-  let stream_root_path = SHARED.get().unwrap().stream_serve_root.clone();
+  let stream_root_path = CONFIG.get().unwrap().stream_serve_root.clone();
   let stream_folder_path = stream_root_path.clone() + "/" + stream_id.as_str();
   
   tokio::fs::create_dir(stream_folder_path.as_str()).await?;
