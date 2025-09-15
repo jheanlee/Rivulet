@@ -4,7 +4,7 @@ use openssl::sha::Sha256;
 use crate::common::error::ApiError;
 use crate::SHARED;
 use entity::entities::user;
-use sea_orm::{ColumnTrait, EntityTrait, ModelTrait, QueryFilter, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait, QueryFilter, Set};
 
 
 fn process_password(password: String, encoded_salt: &[u8]) -> Result<String, ApiError> {
@@ -24,6 +24,38 @@ pub async fn if_user_exists(username: String) -> Result<bool, ApiError> {
     .one(db_connection)
     .await?
     .is_some())
+}
+
+pub async fn list_users() -> Result<Vec<user::Model>, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  Ok(user::Entity::find().all(db_connection).await?)
+}
+
+pub async fn is_admin(username: String) -> Result<Option<bool>, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  let user = user::Entity::find()
+    .filter(user::Column::Username.eq(username))
+    .one(db_connection)
+    .await?;
+
+  if let Some(user) = user {
+    Ok(Some(user.administrator))
+  } else {
+    Ok(None)
+  }
+}
+
+pub async fn set_admin(username: String, is_administrator: bool) -> Result<(), ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  let mut user = user::Entity::find()
+    .filter(user::Column::Username.eq(username))
+    .one(db_connection)
+    .await?
+    .ok_or(ApiError::NotFound)?
+    .into_active_model();
+  user.administrator = Set(is_administrator);
+  user.update(db_connection).await?;
+  Ok(())
 }
 
 pub async fn update_user(username: String, password: String, is_administrator: bool) -> Result<(), ApiError> {
@@ -53,7 +85,7 @@ pub async fn update_user(username: String, password: String, is_administrator: b
   Ok(())
 }
 
-pub async fn remove_user(username: String) -> Result<u64, ApiError> {
+pub async fn delete_user(username: String) -> Result<u64, ApiError> {
   let db_connection = &SHARED.get().unwrap().database_connection;
   let user = user::Entity::find()
     .filter(user::Column::Username.eq(username))
@@ -61,11 +93,14 @@ pub async fn remove_user(username: String) -> Result<u64, ApiError> {
     .await?;
 
   if let Some(user) = user {
-    Ok(user.delete(db_connection).await?.rows_affected)
+    let res = user.delete(db_connection).await?.rows_affected;
+    if res > 0 { Ok(res) } else { Err(ApiError::NotFound) }
   } else {
-    Ok(0)
+    Err(ApiError::NotFound)
   }
 }
+
+
 
 pub async fn authenticate_user(username: String, password: String) -> Result<Option<bool>, ApiError> {
   let db_connection = &SHARED.get().unwrap().database_connection;
@@ -79,23 +114,4 @@ pub async fn authenticate_user(username: String, password: String) -> Result<Opt
   } else {
     Ok(None)
   }
-}
-
-pub async fn is_admin(username: String) -> Result<Option<bool>, ApiError> {
-  let db_connection = &SHARED.get().unwrap().database_connection;
-  let user = user::Entity::find()
-    .filter(user::Column::Username.eq(username))
-    .one(db_connection)
-    .await?;
-
-  if let Some(user) = user {
-    Ok(Some(user.administrator))
-  } else {
-    Ok(None)
-  }
-}
-
-pub async fn list_users() -> Result<Vec<user::Model>, ApiError> {
-  let db_connection = &SHARED.get().unwrap().database_connection;
-  Ok(user::Entity::find().all(db_connection).await?)
 }

@@ -1,9 +1,10 @@
 use axum::middleware;
-use axum::routing::{get_service, post};
+use axum::routing::{get, get_service, post};
 use clap::Parser;
 use tokio::sync::OnceCell;
 use tower_http::services::ServeDir;
 use crate::api::auth::{login, refresh_token, verify_admin, verify_jwt};
+use crate::api::users::{check_user_availability, delete_user, list_users, modify_user, new_user, set_admin};
 use crate::auth::key::init_jwt_keys;
 use crate::common::args::Args;
 use crate::common::log;
@@ -45,11 +46,17 @@ async fn main() {
   // tokio::fs::create_dir_all(CONFIG.get().unwrap().stream_serve_root.as_str()).await.expect("failed to create stream directory");
 
   let app = axum::Router::new()
+    .route("/api/users/check", get(check_user_availability))
+    .route("/api/users/list", get(list_users))
+    .route("/api/users/set-admin", post(set_admin))
+    .route("/api/users/new", post(new_user))
+    .route("/api/users/modify", post(modify_user))
+    .route("/api/users/delete", post(delete_user))
     .layer(middleware::from_fn(verify_admin))
     .nest_service("/stream", get_service(ServeDir::new(CONFIG.get().unwrap().stream_serve_root.as_str())))
     .layer(middleware::from_fn(verify_jwt))
-    .route("/api/users/login", post(login))
-    .route("/api/refresh-token", post(refresh_token));
+    .route("/api/auth/login", post(login))
+    .route("/api/auth/refresh-token", post(refresh_token));
 
   let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
   axum::serve(listener, app).await.unwrap();
