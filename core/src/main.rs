@@ -22,7 +22,7 @@ pub static SHARED: OnceCell<Shared> = OnceCell::const_new();
 
 #[tokio::main]
 async fn main() {
-  dotenv::dotenv().unwrap();
+  let _ = dotenv::dotenv();
   let args = Args::parse();
   
   CONFIG.set(Config {
