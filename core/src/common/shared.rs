@@ -1,3 +1,4 @@
+use sea_orm::DatabaseConnection;
 use crate::auth::key::JwtKeys;
 use crate::common::log::LogConfig;
 
@@ -11,6 +12,7 @@ pub struct Config {
 }
 
 pub struct Shared {
+  pub database_connection: DatabaseConnection,
   pub jwt_keys_refresh: JwtKeys,
   pub jwt_keys_access: JwtKeys,
 }

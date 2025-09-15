@@ -19,8 +19,8 @@ pub async fn convert_video(media_path: String) -> Result<String, anyhow::Error> 
     .arg("-hls_segment_filename").arg(format!("{}/data%03d.ts", stream_folder_path))
     .arg(format!("{}/stream.m3u8", stream_folder_path))
     .spawn()?;
-  child.wait().await?;
-  //  TODO error handling
+  let res = child.wait().await?;
+  println!("{}", res);
   
   Ok(stream_id)
 }
