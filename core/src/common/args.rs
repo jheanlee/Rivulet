@@ -6,7 +6,7 @@ pub struct Args {
   pub verbose: u8,
 
   /// Database server url (supported backend: PostgresSQL)
-  /// Example: "user:password@localhost:5432/rivulet?currentSchema=public"
+  /// Example: "user:password@localhost:5432/rivulet"
   #[arg(short, long)]
   pub database_url: String,
 
@@ -16,9 +16,4 @@ pub struct Args {
   /// Filter level of logging
   #[arg(long, default_value_t = 30)]
   pub log_level: u8,
-
-  #[arg(short, long)]
-  pub media_root: String,
-  #[arg(short, long)]
-  pub stream_root: String,
 }

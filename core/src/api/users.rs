@@ -1,6 +1,6 @@
 use axum::body::Body;
-use axum::extract::Query;
-use axum::http;
+use axum::extract::{Path, Query};
+use axum::{http, Json};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use regex::Regex;
@@ -19,16 +19,17 @@ fn check_password_requirements(password: &str) -> bool {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct CheckUserAvailability {
+pub struct CheckUsernameAvailability {
   username: String
 }
-pub async fn check_user_availability(Query(query): Query<CheckUserAvailability>) -> Result<Response, ApiError> {
+pub async fn check_username_availability(Json(request_body): Json<CheckUsernameAvailability>) -> Result<Response, ApiError> {
   let response_builder = Response::builder().header(http::header::CONTENT_TYPE, "application/json");
   let response_body = Body::from(
     json!({
-      "available": !user::if_user_exists(query.username).await?
+      "available": !user::if_username_exists(request_body.username).await?
     }).to_string()
   );
+  
   Ok(response_builder.body(response_body)?)
 }
 
@@ -43,26 +44,16 @@ pub async fn list_users() -> Result<Response, ApiError> {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct SetAdmin {
-  username: String,
-  admin: bool,
-}
-pub async fn set_admin(Query(query): Query<SetAdmin>) -> Result<impl IntoResponse, ApiError> {
-  user::set_admin(query.username, query.admin).await?;
-  Ok(StatusCode::OK)
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct NewUser {
+pub struct NewUserRequestBody {
   username: String,
   password: String,
   admin: bool
 }
-pub async fn new_user(Query(query): Query<NewUser>) -> Result<impl IntoResponse, ApiError> {
-  if check_username_requirements(query.username.as_str()) && check_password_requirements(query.password.as_str()) {
-    if !user::if_user_exists(query.username.clone()).await? {
-      user::update_user(query.username, query.password, query.admin).await?;
-      Ok(StatusCode::OK)
+pub async fn new_user(Json(request_body): Json<NewUserRequestBody>) -> Result<impl IntoResponse, ApiError> {
+  if check_username_requirements(request_body.username.as_str()) && check_password_requirements(request_body.password.as_str()) {
+    if !user::if_username_exists(request_body.username.clone()).await? {
+      user::create_user(request_body.username, request_body.password, request_body.admin).await?;
+      Ok(StatusCode::CREATED)
     } else {
       Ok(StatusCode::CONFLICT)
     }
@@ -72,33 +63,59 @@ pub async fn new_user(Query(query): Query<NewUser>) -> Result<impl IntoResponse,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct ModifyUser {
-  username: String,
+pub struct ModifyUserPath {
+  user_id: String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ModifyUserRequestBody {
   password: String,
   admin: bool
 }
-pub async fn modify_user(Query(query): Query<ModifyUser>) -> Result<impl IntoResponse, ApiError> {
-  if check_password_requirements(query.password.as_str()) {
-    if user::if_user_exists(query.username.clone()).await? {
-      user::update_user(query.username, query.password, query.admin).await?;
+pub async fn modify_user(Path(path): Path<ModifyUserPath>, Json(request_body): Json<ModifyUserRequestBody>) -> Result<impl IntoResponse, ApiError> {
+  if user::if_user_id_exists(path.user_id.clone()).await? {
+    if check_password_requirements(request_body.password.as_str()) {
+      user::update_user(path.user_id, request_body.password, request_body.admin).await?;
       Ok(StatusCode::OK)
     } else {
-      Ok(StatusCode::NOT_FOUND)
+      Ok(StatusCode::BAD_REQUEST)
     }
   } else {
-    Ok(StatusCode::BAD_REQUEST)
+    Ok(StatusCode::NOT_FOUND)
   }
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct DeleteUser {
-  username: String
+pub struct DeleteUserPath {
+  user_id: String
 }
-pub async fn delete_user(Query(query): Query<DeleteUser>) -> Result<impl IntoResponse, ApiError> {
-  if user::if_user_exists(query.username.clone()).await? {
-    user::delete_user(query.username).await?;
-    Ok(StatusCode::OK)
-  } else {
-    Ok(StatusCode::NOT_FOUND)
-  }
+pub async fn delete_user(Path(path): Path<DeleteUserPath>) -> Result<impl IntoResponse, ApiError> {
+  user::delete_user(path.user_id).await?;
+  Ok(StatusCode::OK)
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct SetAdminPath {
+  user_id: String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct SetAdminRequestBody {
+  admin: bool,
+}
+pub async fn set_admin(Path(path): Path<SetAdminPath>, Json(request_body): Json<SetAdminRequestBody>) -> Result<impl IntoResponse, ApiError> {
+  user::set_admin(path.user_id, request_body.admin).await?;
+  Ok(StatusCode::OK)
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ResetPasswordPath {
+  user_id: String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ResetPasswordRequestBody {
+  old_password: String,
+  new_password: String,
+}
+pub async fn reset_password(Path(path): Path<ResetPasswordPath>, Json(request_body): Json<ResetPasswordRequestBody>) -> Result<impl IntoResponse, ApiError> {
+  user::reset_password(path.user_id, request_body.old_password, request_body.new_password).await?;
+  Ok(StatusCode::OK)
 }
