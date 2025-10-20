@@ -4,6 +4,7 @@ use axum::routing::{delete, get, patch, post, put};
 use clap::Parser;
 use tokio::sync::OnceCell;
 use crate::api::auth::{login, refresh_token, verify_admin, verify_jwt};
+use crate::api::upload::{upload_file, upload_metadata};
 use crate::api::users::{check_username_availability, delete_user, list_users, modify_user, new_user, reset_password, set_admin};
 use crate::auth::key::init_jwt_keys;
 use crate::common::args::Args;
@@ -16,10 +17,10 @@ mod media;
 mod auth;
 mod api;
 mod orm;
+mod file;
 
 pub static CONFIG: OnceCell<Config> = OnceCell::const_new();
 pub static SHARED: OnceCell<Shared> = OnceCell::const_new();
-
 
 #[tokio::main]
 async fn main() {
@@ -29,8 +30,12 @@ async fn main() {
   CONFIG.set(Config {
     log_config: log::init(args.verbose, args.log_level, !args.daemon_mode, args.daemon_mode)
       .expect("unsupported platform"),
-    media_root: std::env::var("MEDIA_ROOT")
-      .expect("a valid path to the media storage folder must be provided through the `MEDIA_ROOT` environment variable"),
+    media_root: std::env::var("RIVULET_MEDIA")
+      .expect("a valid path to the media storage folder must be provided through the `RIVULET_MEDIA` environment variable"),
+    tmp_dir: std::env::var("RIVULET_TMP")
+      .unwrap_or("/tmp/rivulet".to_string()),
+    stream_root: std::env::var("RIVULET_STREAM")
+      .expect("a valid path to the media storage folder must be provided through the `RIVULET_STREAM` environment variable"),
   }).unwrap_or_else(|err| panic!("{err}"));
   
   SHARED.set(Shared {
@@ -53,8 +58,9 @@ async fn main() {
     .route("/api/users/{user_id}/set-admin", patch(set_admin))
     .route("/api/users/{user_id}/reset-password", patch(reset_password))
     .route("/api/users/{user_id}", delete(delete_user))
-    // .route("/api/media/upload", post(todo!())
-    //   .layer(DefaultBodyLimit::max(20 * 1024 * 1024)))
+    .route("/api/media/upload", post(upload_file)
+      .layer(DefaultBodyLimit::max(21 * 1024 * 1024)))
+    .route("/api/media/upload/metadata", post(upload_metadata))
     .layer(middleware::from_fn(verify_admin))
     // .nest_service("/stream", get_service(ServeDir::new(CONFIG.get().unwrap().stream_serve_root.as_str())))
     .layer(middleware::from_fn(verify_jwt))

@@ -17,8 +17,8 @@ pub struct Model {
     pub language: String,
     #[sea_orm(column_type = "Text")]
     pub region: String,
-    pub release_date: Date,
-    pub year: i32,
+    pub release_date: Option<Date>,
+    pub year: Option<i32>,
     pub date_added: Date,
     #[sea_orm(column_type = "Text")]
     pub description: String,

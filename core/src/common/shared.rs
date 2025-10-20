@@ -7,7 +7,8 @@ pub struct Config {
   pub log_config: LogConfig,
 
   pub media_root: String,
-  // pub thumbnail_root: String,
+  pub tmp_dir: String,
+  pub stream_root: String,
 }
 
 pub struct Shared {

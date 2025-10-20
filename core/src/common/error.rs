@@ -9,6 +9,7 @@ pub enum ApiError {
   NotFound,
   Unauthorized,
   Conflict,
+  BadRequest
 }
 
 impl axum::response::IntoResponse for ApiError {
@@ -23,9 +24,12 @@ impl axum::response::IntoResponse for ApiError {
       },
       ApiError::Unauthorized => {
         StatusCode::UNAUTHORIZED.into_response()
-      }
+      },
       ApiError::Conflict => {
         StatusCode::CONFLICT.into_response()
+      },
+      ApiError::BadRequest => {
+        StatusCode::BAD_REQUEST.into_response()
       }
     }
   }

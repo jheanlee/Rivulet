@@ -97,7 +97,7 @@ pub async fn create_user(username: String, password: String, is_administrator: b
 
   let encoded_password = process_password(password, encoded_salt.as_bytes())?;
 
-  let user = user::ActiveModel{
+  let user = user::ActiveModel {
     id: Set(nanoid!()),
     username: Set(username),
     hashed_password: Set(encoded_password),

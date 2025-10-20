@@ -17,10 +17,10 @@ pub struct Model {
     pub region: String,
     #[sea_orm(column_type = "Text")]
     pub album: String,
-    pub disk_number: i32,
-    pub track_number: i32,
-    pub release_date: Date,
-    pub year: i32,
+    pub disk_number: Option<i32>,
+    pub track_number: Option<i32>,
+    pub release_date: Option<Date>,
+    pub year: Option<i32>,
     pub date_added: Date,
     #[sea_orm(column_type = "Text")]
     pub description: String,

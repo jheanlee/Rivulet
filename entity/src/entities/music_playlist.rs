@@ -11,8 +11,8 @@ pub struct Model {
     pub title: String,
     pub artists: Vec<String>,
     pub genres: Vec<String>,
-    pub release_date: Date,
-    pub year: i32,
+    pub release_date: Option<Date>,
+    pub year: Option<i32>,
     pub date_added: Date,
     pub music_ids: Vec<String>,
     #[sea_orm(column_type = "Text")]

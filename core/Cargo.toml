@@ -7,7 +7,7 @@ edition = "2021"
 entity = { path = "../entity" }
 
 anyhow = "1.0.98"
-axum = "0.8.4"
+axum = { version = "0.8.4", features = ["multipart"] }
 clap = { version = "4.5.43", features = ["derive"] }
 nanoid = "0.4.0"
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "fs", "sync", "process"] }

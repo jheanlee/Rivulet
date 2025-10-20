@@ -1,10 +1,10 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { paths } from "@/config/paths.ts";
-import Root from "@/app/routes/root.tsx";
-import Home from "@/app/routes/home.tsx";
-import NotFound from "@/app/routes/not-found.tsx";
-import Login from "@/app/routes/login.tsx";
+import { Root } from "@/app/routes/root.tsx";
+import { Home } from "@/app/routes/home.tsx";
+import { Login } from "@/app/routes/login.tsx";
 import { Media } from "@/app/routes/media/root.tsx";
+import NotFound from "@/app/routes/not-found.tsx";
 
 export const createAppRouter = () =>
   createBrowserRouter([
@@ -18,15 +18,15 @@ export const createAppRouter = () =>
         },
         {
           path: paths.root.media.music.path,
-          Component: () => Media({ media_type: "music" }),
+          Component: () => Media({ mediaType: "music" }),
         },
         {
           path: paths.root.media.videos.path,
-          Component: () => Media({ media_type: "videos" }),
+          Component: () => Media({ mediaType: "videos" }),
         },
         {
           path: paths.root.media.movies.path,
-          Component: () => Media({ media_type: "movies" }),
+          Component: () => Media({ mediaType: "movies" }),
         },
         {
           path: paths.root.login.path,

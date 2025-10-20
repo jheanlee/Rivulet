@@ -1,15 +1,19 @@
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form.tsx";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "../ui/button";
+import { login } from "@/services/auth.ts";
+import { useNavigate } from "react-router";
+import { paths } from "@/config/paths.ts";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from "@/components/ui/field.tsx";
+import { useState } from "react";
 
 const formSchema = z.object({
   username: z
@@ -40,6 +44,19 @@ const formSchema = z.object({
 });
 
 export const LoginForm = () => {
+  let navigate = useNavigate();
+  const [submitStatus, setSubmitStatus] = useState<number>(200);
+  const getSubmitStatusMessage = () => {
+    switch (submitStatus) {
+      case 401:
+        return "Incorrect username or password.";
+      case 500:
+        return "Unable to connect to server.";
+      default:
+        return `An error has occurred. Error code: ${submitStatus}`;
+    }
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,44 +65,67 @@ export const LoginForm = () => {
     },
   });
 
-  const onSummit = (values: z.infer<typeof formSchema>) => {
-    //TODO
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    let res = await login(values);
+    setSubmitStatus(res);
+    if (res === 200) {
+      navigate(paths.root.home.getHref());
+    }
   };
 
   return (
     <div className="w-full h-full flex justify-center content-center">
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSummit)}
-          className="w-100 h-70 mt-20 flex flex-col gap-4 content-center"
-        >
-          <FormField
-            control={form.control}
-            name={"username"}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input placeholder="user" {...field} />
-                </FormControl>
-              </FormItem>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="w-100 h-70 mt-20 flex flex-col gap-4 content-center"
+      >
+        <FieldSet data-invalid={submitStatus !== 200}>
+          <FieldGroup>
+            <Controller
+              name="username"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field>
+                  <FieldLabel>Username</FieldLabel>
+                  <Input
+                    type="text"
+                    placeholder="user"
+                    aria-invalid={fieldState.invalid}
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="password"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field>
+                  <FieldLabel>Password</FieldLabel>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    aria-invalid={fieldState.invalid}
+                    {...field}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            {submitStatus !== 200 && (
+              <FieldError>{getSubmitStatusMessage()}</FieldError>
             )}
-          />
-          <FormField
-            control={form.control}
-            name={"password"}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <Button type="submit">Submit</Button>
-        </form>
-      </Form>
+            <Field>
+              <Button type="submit">Submit</Button>
+            </Field>
+          </FieldGroup>
+        </FieldSet>
+      </form>
     </div>
   );
 };
