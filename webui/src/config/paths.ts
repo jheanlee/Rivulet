@@ -9,6 +9,9 @@ export const paths = {
       getHref: () => "/",
     },
     media: {
+      wrapper: {
+        path: "media/:mediaType",
+      },
       music: {
         path: "media/music",
         getHref: () => "/media/music",

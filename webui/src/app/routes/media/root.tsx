@@ -11,6 +11,22 @@ import UploadVideoForm from "@/components/forms/media_upload/video.tsx";
 import { useState } from "react";
 import { UploadMovieForm } from "@/components/forms/media_upload/movie.tsx";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { useParams } from "react-router";
+import { NotFound } from "@/app/routes/not-found.tsx";
+
+export const MediaWrapper = () => {
+  const path = useParams();
+  switch (path.mediaType) {
+    case "music":
+      return Media({ mediaType: "music" });
+    case "movies":
+      return Media({ mediaType: "movies" });
+    case "videos":
+      return Media({ mediaType: "videos" });
+    default:
+      return NotFound();
+  }
+};
 
 export interface MediaProp {
   mediaType: "music" | "movies" | "videos";

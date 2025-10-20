@@ -1,40 +1,41 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { paths } from "@/config/paths.ts";
 import { Root } from "@/app/routes/root.tsx";
-import { Home } from "@/app/routes/home.tsx";
-import { Login } from "@/app/routes/login.tsx";
-import { Media } from "@/app/routes/media/root.tsx";
-import NotFound from "@/app/routes/not-found.tsx";
 
 export const createAppRouter = () =>
   createBrowserRouter([
     {
       path: paths.root.root.path,
       Component: Root,
+      hydrateFallbackElement: <div>Loading...</div>,
       children: [
         {
           path: paths.root.home.path,
-          Component: Home,
+          lazy: async () => {
+            let { Home } = await import("@/app/routes/home");
+            return { Component: Home };
+          },
         },
         {
-          path: paths.root.media.music.path,
-          Component: () => Media({ mediaType: "music" }),
-        },
-        {
-          path: paths.root.media.videos.path,
-          Component: () => Media({ mediaType: "videos" }),
-        },
-        {
-          path: paths.root.media.movies.path,
-          Component: () => Media({ mediaType: "movies" }),
+          path: paths.root.media.wrapper.path,
+          lazy: async () => {
+            let { MediaWrapper } = await import("@/app/routes/media/root");
+            return { Component: MediaWrapper };
+          },
         },
         {
           path: paths.root.login.path,
-          Component: Login,
+          lazy: async () => {
+            let { Login } = await import("@/app/routes/login");
+            return { Component: Login };
+          },
         },
         {
           path: "*",
-          Component: NotFound,
+          lazy: async () => {
+            let { NotFound } = await import("@/app/routes/not-found");
+            return { Component: NotFound };
+          },
         },
       ],
     },
