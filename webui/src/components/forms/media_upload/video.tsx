@@ -48,6 +48,7 @@ export const videoSchema = z.object({
     .min(0)
     .max(1024, "Field must not exceed 1024 characters."),
   file: z.file().optional(),
+  filename: z.string().normalize().optional(),
 });
 
 interface UploadVideoFormProps {
@@ -66,6 +67,7 @@ const UploadVideoForm = ({ onExit }: UploadVideoFormProps) => {
       region: "",
       description: "",
       file: undefined,
+      filename: undefined,
     },
   });
 
@@ -214,6 +216,7 @@ const UploadVideoForm = ({ onExit }: UploadVideoFormProps) => {
                     aria-invalid={fieldState.invalid}
                     onChange={(event) => {
                       form.setValue("file", event.target.files?.[0]);
+                      form.setValue("filename", event.target.files?.[0].name);
                     }}
                   />
                   {fieldState.invalid && (

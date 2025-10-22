@@ -12,6 +12,7 @@ pub struct UploadMetadataMusic {
   pub year: Option<i32>,
   pub description: String,
   pub video_id: String,
+  pub file_ext: String,
 }
 
 
@@ -26,6 +27,7 @@ pub struct UploadMetadataMovie {
   pub release_date: Option<String>,
   pub year: Option<i32>,
   pub description: String,
+  pub file_ext: String,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -36,4 +38,5 @@ pub struct UploadMetadataVideo {
   pub language: String,
   pub region: String,
   pub description: String,
+  pub file_ext: String,
 }

@@ -18,7 +18,8 @@ cronFetcher.interceptors.request.use(async (config) => {
     return config;
   }
 
-  cronFetcher.defaults.headers["Authorization"] = access_token;
+  config.headers["Authorization"] = access_token;
+
   if (
     JSON.parse(
       Buffer.from(access_token.split(".")[1], "base64").toString("ascii"),
@@ -43,7 +44,8 @@ fetcher.interceptors.request.use(async (config) => {
     return config;
   }
 
-  fetcher.defaults.headers["Authorization"] = access_token;
+  config.headers["Authorization"] = access_token;
+
   if (
     JSON.parse(
       Buffer.from(access_token.split(".")[1], "base64").toString("ascii"),

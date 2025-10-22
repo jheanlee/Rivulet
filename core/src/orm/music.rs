@@ -1,8 +1,8 @@
 use chrono::NaiveDate;
 use nanoid::nanoid;
-use sea_orm::{EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, EntityTrait, IntoActiveModel, Set};
 use entity::entities::music;
-use entity::entities::music::ActiveModel;
+use entity::entities::music::{ActiveModel, Entity};
 use crate::api::models::upload::UploadMetadataMusic;
 use crate::common::error::ApiError;
 use crate::{CONFIG, SHARED};
@@ -31,7 +31,7 @@ pub async fn new_music_metadata(metadata: UploadMetadataMusic) -> Result<String,
     year: Set(metadata.year),
     date_added: Set(chrono::Utc::now().naive_utc().date()),
     description: Set(metadata.description),
-    storage_path: Set(format!("{media_root}/{id}/tmp_file")),  //  TODO
+    storage_path: Set(format!("{media_root}/{id}/media.{}", metadata.file_ext)),
     video_id: Set(metadata.video_id),
   };
   
@@ -42,4 +42,22 @@ pub async fn new_music_metadata(metadata: UploadMetadataMusic) -> Result<String,
   ).exec(db_connection).await?;
 
   Ok(id)
+}
+
+pub async fn delete_music_metadata(id: &str) -> Result<u64, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  if let Some(model) = Entity::find_by_id(id).one(db_connection).await? {
+    Ok(model.into_active_model().delete(db_connection).await?.rows_affected)
+  } else {
+    Err(ApiError::NotFound)
+  }
+}
+
+pub async fn get_music_storage_path(id: &str) -> Result<String, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  if let Some(model) = Entity::find_by_id(id).one(db_connection).await? {
+    Ok(model.storage_path)
+  } else {
+    Ok(String::new())
+  }
 }

@@ -28,7 +28,7 @@ export const Navbar = () => {
               asChild
               className={navigationMenuTriggerStyle()}
             >
-              <NavLink to={paths.root.media.movies.getHref()}>Movies</NavLink>
+              <NavLink to={paths.root.media.music.getHref()}>Music</NavLink>
             </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
@@ -44,7 +44,7 @@ export const Navbar = () => {
               asChild
               className={navigationMenuTriggerStyle()}
             >
-              <NavLink to={paths.root.media.music.getHref()}>Music</NavLink>
+              <NavLink to={paths.root.media.movies.getHref()}>Movies</NavLink>
             </NavigationMenuLink>
           </NavigationMenuItem>
         </NavigationMenuList>

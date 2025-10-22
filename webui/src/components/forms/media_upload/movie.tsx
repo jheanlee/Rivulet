@@ -84,6 +84,7 @@ export const movieSchema = z.object({
     .min(0)
     .max(1024, "Field must not exceed 1024 characters."),
   file: z.file().optional(),
+  filename: z.string().normalize().optional(),
 });
 
 interface UploadMovieFormProps {
@@ -107,6 +108,7 @@ export const UploadMovieForm = ({ onExit }: UploadMovieFormProps) => {
       year: undefined,
       description: "",
       file: undefined,
+      filename: undefined,
     },
   });
 
@@ -455,6 +457,7 @@ export const UploadMovieForm = ({ onExit }: UploadMovieFormProps) => {
                     aria-invalid={fieldState.invalid}
                     onChange={(event) => {
                       form.setValue("file", event.target.files?.[0]);
+                      form.setValue("filename", event.target.files?.[0].name);
                     }}
                   />
                   {fieldState.invalid && (

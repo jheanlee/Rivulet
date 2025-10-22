@@ -1,8 +1,8 @@
 use chrono::NaiveDate;
 use nanoid::nanoid;
-use sea_orm::{EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, EntityTrait, IntoActiveModel, Set};
 use entity::entities::movie;
-use entity::entities::movie::ActiveModel;
+use entity::entities::movie::{ActiveModel, Entity};
 use crate::api::models::upload::UploadMetadataMovie;
 use crate::common::error::ApiError;
 use crate::{CONFIG, SHARED};
@@ -28,14 +28,32 @@ pub async fn new_movie_metadata(metadata: UploadMetadataMovie) -> Result<String,
     year: Set(metadata.year),
     date_added: Set(chrono::Utc::now().naive_utc().date()),
     description: Set(metadata.description),
-    storage_path: Set(format!("{media_root}/{id}/tmp_file")),
+    storage_path: Set(format!("{media_root}/{id}/media.{}", metadata.file_ext)),
   };
   
-  let _res = movie::Entity::insert(movie).on_conflict(
+  let _res = Entity::insert(movie).on_conflict(
     sea_orm::sea_query::OnConflict::column(movie::Column::Id)
       .do_nothing()
       .to_owned()
   ).exec(db_connection).await?;
   
   Ok(id)
+}
+
+pub async fn delete_movie_metadata(id: &str) -> Result<u64, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  if let Some(model) = Entity::find_by_id(id).one(db_connection).await? {
+    Ok(model.into_active_model().delete(db_connection).await?.rows_affected)
+  } else {
+    Err(ApiError::NotFound)
+  }
+}
+
+pub async fn get_movie_storage_path(id: &str) -> Result<String, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  if let Some(model) = Entity::find_by_id(id).one(db_connection).await? {
+    Ok(model.storage_path)
+  } else {
+    Ok(String::new())
+  }
 }

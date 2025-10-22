@@ -60,75 +60,6 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
     useUpdateStore.setState({ uploadActive: true });
 
     switch (upload.type) {
-      case "movie": {
-        const meta_res = await fetcher.post<{ id: string }>(
-          "/api/media/upload/metadata",
-          {
-            title: upload.data.title,
-            director: upload.data.director,
-            cast:
-              upload.data.cast.length === 0 ? [] : upload.data.cast.split(","),
-            genres:
-              upload.data.genres.length === 0
-                ? []
-                : upload.data.genres.split(","),
-            language: upload.data.language,
-            region: upload.data.region,
-            release_date:
-              upload.data.release_date_year === undefined ||
-              upload.data.release_date_month === undefined ||
-              upload.data.release_date_day === undefined
-                ? null
-                : new Date(
-                    `${upload.data.release_date_year}-${upload.data.release_date_month}-${upload.data.release_date_day}`,
-                  ).toISOString(),
-            year: upload.data.year,
-            description: upload.data.description,
-          },
-          {
-            params: {
-              media_type: "movie",
-            },
-          },
-        );
-
-        const upload_id = meta_res.data.id;
-        await upload_file({
-          upload_id: upload_id,
-          file: upload.data.file,
-          toastId: toastId,
-        });
-        break;
-      }
-      case "video": {
-        const meta_res = await fetcher.post<{ id: string }>(
-          "/api/media/upload/metadata",
-          {
-            title: upload.data.title,
-            creator: upload.data.creator,
-            categories:
-              upload.data.categories.length === 0
-                ? []
-                : upload.data.categories.split(","),
-            language: upload.data.language,
-            region: upload.data.region,
-            description: upload.data.description,
-          },
-          {
-            params: {
-              media_type: "video",
-            },
-          },
-        );
-
-        const upload_id = meta_res.data.id;
-        await upload_file({
-          upload_id: upload_id,
-          file: upload.data.file,
-          toastId: toastId,
-        });
-        break;
-      }
       case "music": {
         const meta_res = await fetcher.post<{ id: string }>(
           "/api/media/upload/metadata",
@@ -158,6 +89,7 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
             year: upload.data.year,
             description: upload.data.description,
             video_id: upload.data.video_id,
+            file_ext: upload.data.filename?.split(".").pop(),
           },
           {
             params: {
@@ -174,10 +106,81 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
         });
         break;
       }
+      case "video": {
+        const meta_res = await fetcher.post<{ id: string }>(
+          "/api/media/upload/metadata",
+          {
+            title: upload.data.title,
+            creator: upload.data.creator,
+            categories:
+              upload.data.categories.length === 0
+                ? []
+                : upload.data.categories.split(","),
+            language: upload.data.language,
+            region: upload.data.region,
+            description: upload.data.description,
+            file_ext: upload.data.filename?.split(".").pop(),
+          },
+          {
+            params: {
+              media_type: "video",
+            },
+          },
+        );
+
+        const upload_id = meta_res.data.id;
+        await upload_file({
+          upload_id: upload_id,
+          file: upload.data.file,
+          toastId: toastId,
+        });
+        break;
+      }
+      case "movie": {
+        const meta_res = await fetcher.post<{ id: string }>(
+          "/api/media/upload/metadata",
+          {
+            title: upload.data.title,
+            director: upload.data.director,
+            cast:
+              upload.data.cast.length === 0 ? [] : upload.data.cast.split(","),
+            genres:
+              upload.data.genres.length === 0
+                ? []
+                : upload.data.genres.split(","),
+            language: upload.data.language,
+            region: upload.data.region,
+            release_date:
+              upload.data.release_date_year === undefined ||
+              upload.data.release_date_month === undefined ||
+              upload.data.release_date_day === undefined
+                ? null
+                : new Date(
+                    `${upload.data.release_date_year}-${upload.data.release_date_month}-${upload.data.release_date_day}`,
+                  ).toISOString(),
+            year: upload.data.year,
+            description: upload.data.description,
+            file_ext: upload.data.filename?.split(".").pop(),
+          },
+          {
+            params: {
+              media_type: "movie",
+            },
+          },
+        );
+
+        const upload_id = meta_res.data.id;
+        await upload_file({
+          upload_id: upload_id,
+          file: upload.data.file,
+          toastId: toastId,
+        });
+        break;
+      }
     }
 
     useUpdateStore.setState({ uploadActive: false });
-    toast.success("Successfully uploaded video", { id: toastId });
+    toast.success("Successfully uploaded media", { id: toastId });
 
     return 200;
   } catch (error) {
@@ -192,6 +195,8 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
               return "Session expired";
             case 403:
               return "Access denied";
+            case 404:
+              return "Upload id not found";
             case 500:
               return "Unable to upload to server";
             default:
