@@ -31,20 +31,23 @@ async fn main() {
     log_config: log::init(args.verbose, args.log_level, !args.daemon_mode, args.daemon_mode)
       .expect("unsupported platform"),
     media_root: std::env::var("RIVULET_MEDIA")
-      .expect("a valid path to the media storage folder must be provided through the `RIVULET_MEDIA` environment variable"),
+      .expect("a valid path to the media storage folder must be provided via the environment variable `RIVULET_MEDIA`"),
     tmp_dir: std::env::var("RIVULET_TMP")
       .unwrap_or("/tmp/rivulet".to_string()),
     stream_root: std::env::var("RIVULET_STREAM")
-      .expect("a valid path to the media storage folder must be provided through the `RIVULET_STREAM` environment variable"),
+      .expect("a valid path to the media storage folder must be provided via the environment variable `RIVULET_STREAM`"),
   }).unwrap_or_else(|err| panic!("{err}"));
   
   SHARED.set(Shared {
-    database_connection: connect_database(args.database_url).await
+    database_connection: connect_database(
+      std::env::var("RIVULET_DATABASE")
+        .expect("a database url must be provided via the environment variable `RIVULET_DATABASE`"),
+    ).await
       .expect("unable to connect to database"),
     jwt_keys_refresh: init_jwt_keys("REFRESH").await
-      .expect("a valid path to a key pair must be provided through `JWT_REFRESH_PRIV_KEY_PATH` and `JWT_REFRESH_PUB_KEY_PATH` environment variables"),
+      .expect("a valid path to a key pair must be provided via the environment variables `RIVULET_JWT_REFRESH_PRIV_KEY` and `JWT_REFRESH_PUB_KEY`"),
     jwt_keys_access: init_jwt_keys("ACCESS").await
-      .expect("a valid path to a key pair must be provided through `JWT_ACCESS_PRIV_KEY_PATH` and `JWT_ACCESS_PUB_KEY_PATH` environment variables"),
+      .expect("a valid path to a key pair must be provided via the environment variables `RIVULET_JWT_ACCESS_PRIV_KEY` and `JWT_ACCESS_PUB_KEY`"),
   }).unwrap_or_else(|err| panic!("{err}"));
 
   tokio::fs::create_dir_all(CONFIG.get().unwrap().media_root.as_str()).await.expect("failed to create media directory");

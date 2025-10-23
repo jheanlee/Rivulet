@@ -6,8 +6,8 @@ pub struct JwtKeys {
 }
 
 pub async fn init_jwt_keys(key_type: &str) -> Result<JwtKeys, anyhow::Error> {
-  let private_key_path = std::env::var(format!("JWT_{key_type}_PRIV_KEY_PATH"))?;
-  let public_key_path = std::env::var(format!("JWT_{key_type}_PUB_KEY_PATH"))?;
+  let private_key_path = std::env::var(format!("RIVULET_JWT_{key_type}_PRIV_KEY"))?;
+  let public_key_path = std::env::var(format!("RIVULET_JWT_{key_type}_PUB_KEY"))?;
   let priv_bytes = tokio::fs::read(private_key_path).await?;
 
   let encoding_key = EncodingKey::from_rsa_pem(priv_bytes.as_slice())
