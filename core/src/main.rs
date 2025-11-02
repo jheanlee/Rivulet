@@ -1,9 +1,11 @@
 use axum::extract::DefaultBodyLimit;
 use axum::middleware;
-use axum::routing::{delete, get, patch, post, put};
+use axum::routing::{delete, get, get_service, patch, post, put};
 use clap::Parser;
 use tokio::sync::OnceCell;
+use tower_http::services::ServeDir;
 use crate::api::auth::{login, refresh_token, verify_admin, verify_jwt};
+use crate::api::serve::serve_media;
 use crate::api::upload::{upload_file, upload_metadata};
 use crate::api::users::{check_username_availability, delete_user, list_users, modify_user, new_user, reset_password, set_admin};
 use crate::auth::key::init_jwt_keys;
@@ -13,7 +15,6 @@ use crate::common::shared::{Config, Shared};
 use crate::orm::database::connect_database;
 
 mod common;
-mod media;
 mod auth;
 mod api;
 mod orm;
@@ -45,13 +46,13 @@ async fn main() {
     ).await
       .expect("unable to connect to database"),
     jwt_keys_refresh: init_jwt_keys("REFRESH").await
-      .expect("a valid path to a key pair must be provided via the environment variables `RIVULET_JWT_REFRESH_PRIV_KEY` and `JWT_REFRESH_PUB_KEY`"),
+      .expect("a valid path to a key pair must be provided via the environment variables `RIVULET_JWT_REFRESH_PRIV_KEY` and `RIVULET_JWT_REFRESH_PUB_KEY`"),
     jwt_keys_access: init_jwt_keys("ACCESS").await
-      .expect("a valid path to a key pair must be provided via the environment variables `RIVULET_JWT_ACCESS_PRIV_KEY` and `JWT_ACCESS_PUB_KEY`"),
+      .expect("a valid path to a key pair must be provided via the environment variables `RIVULET_JWT_ACCESS_PRIV_KEY` and `RIVULET_JWT_ACCESS_PUB_KEY`"),
   }).unwrap_or_else(|err| panic!("{err}"));
 
   tokio::fs::create_dir_all(CONFIG.get().unwrap().media_root.as_str()).await.expect("failed to create media directory");
-  // tokio::fs::create_dir_all(CONFIG.get().unwrap().stream_serve_root.as_str()).await.expect("failed to create stream directory");
+  tokio::fs::create_dir_all(CONFIG.get().unwrap().stream_root.as_str()).await.expect("failed to create stream directory");
 
   let app = axum::Router::new()
     .route("/api/users/check-username", get(check_username_availability))
@@ -65,8 +66,9 @@ async fn main() {
       .layer(DefaultBodyLimit::max(21 * 1024 * 1024)))
     .route("/api/media/upload/metadata", post(upload_metadata))
     .layer(middleware::from_fn(verify_admin))
-    // .nest_service("/stream", get_service(ServeDir::new(CONFIG.get().unwrap().stream_serve_root.as_str())))
-    .layer(middleware::from_fn(verify_jwt))
+    .route("/api/media/{media_id}/serve", post(serve_media))
+    .nest_service("/api/media/stream", get_service(ServeDir::new(CONFIG.get().unwrap().stream_root.as_str())))
+    // .layer(middleware::from_fn(verify_jwt))  TODO
     .route("/api/auth/login", post(login))
     .route("/api/auth/refresh-token", post(refresh_token));
 

@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { paths } from "@/config/paths.ts";
 import { Root } from "@/app/routes/root.tsx";
 
-export const createAppRouter = () =>
+const createAppRouter = () =>
   createBrowserRouter([
     {
       path: paths.root.root.path,
@@ -38,6 +38,13 @@ export const createAppRouter = () =>
           },
         },
       ],
+    },
+    {
+      path: paths.playback.path,
+      lazy: async () => {
+        let { Playback } = await import("@/app/routes/playback");
+        return { Component: Playback };
+      },
     },
   ]);
 

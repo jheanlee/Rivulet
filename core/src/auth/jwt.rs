@@ -9,7 +9,7 @@ pub struct Claims {
   pub iat: u64,
 }
 
-pub async fn generate_refresh_token(sub: String) -> Result<String, ApiError> {
+pub fn generate_refresh_token(sub: String) -> Result<String, ApiError> {
   let claims = Claims {
     sub: sub,
     iat: get_current_timestamp(),
@@ -19,7 +19,7 @@ pub async fn generate_refresh_token(sub: String) -> Result<String, ApiError> {
   Ok(token)
 }
 
-pub async fn generate_access_token(sub: String) -> Result<String, ApiError> {
+pub fn generate_access_token(sub: String) -> Result<String, ApiError> {
   let claims = Claims {
     sub: sub,
     iat: get_current_timestamp(),
@@ -28,3 +28,18 @@ pub async fn generate_access_token(sub: String) -> Result<String, ApiError> {
   let token = jsonwebtoken::encode(&Header::new(Algorithm::RS256), &claims, &SHARED.get().unwrap().jwt_keys_access.encoding_key)?;
   Ok(token)
 }
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct PlaybackClaims {
+  pub exp: u64,
+  pub media_id: String
+}
+pub fn generate_playback_token(media_id: String) -> Result<String, ApiError> {
+  let claims = PlaybackClaims {
+    exp: get_current_timestamp() + 6 * 60 * 60,
+    media_id: media_id
+  };
+  let token = jsonwebtoken::encode(&Header::new(Algorithm::RS256), &claims, &SHARED.get().unwrap().jwt_keys_access.encoding_key)?;
+  Ok(token)
+}
+

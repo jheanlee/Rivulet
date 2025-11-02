@@ -29,6 +29,10 @@ export const paths = {
       path: "login",
       getHref: () => "/login",
     },
+    notFound: {
+      path: "not-found",
+      getHref: () => "/not-found",
+    },
   },
   playback: {
     path: "/playback/:playbackId",
