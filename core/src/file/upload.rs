@@ -65,10 +65,11 @@ async fn assemble_chunks_priv(upload_id: &str, last_chunk_id: u64) -> Result<(),
     remove_file(format!("{target_chunks_dir}/chunk_{chunk_id}")).await?;
   }
   chunks_cleanup(upload_id).await?;
+
   Ok(())
 }
 
-async fn get_storage_path(upload_id: &str) -> Result<String, ApiError> {
+pub async fn get_storage_path(upload_id: &str) -> Result<String, ApiError> {
   let mut id = get_music_storage_path(upload_id).await?;
   if id.is_empty() {
     id = get_video_storage_path(upload_id).await?;
