@@ -4,6 +4,9 @@ pub struct Args {
   #[arg(short, long, action = clap::ArgAction::Count)]
   pub verbose: u8,
 
+  #[arg(long, default_value_t = false)]
+  pub disable_hardware_acceleration: bool,
+
   /// Enables logging to system logger (syslog, os_log) and disables stdout
   #[arg(short_alias = 'D', long, default_value_t = false)]
   pub daemon_mode: bool,

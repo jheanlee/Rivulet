@@ -1,8 +1,10 @@
+use std::collections::HashSet;
+use std::sync::Arc;
 use axum::extract::DefaultBodyLimit;
 use axum::middleware;
 use axum::routing::{delete, get, get_service, patch, post, put};
 use clap::Parser;
-use tokio::sync::OnceCell;
+use tokio::sync::{mpsc, OnceCell, RwLock};
 use tower_http::services::ServeDir;
 use crate::api::auth::{login, refresh_token, verify_admin, verify_jwt};
 use crate::api::serve::serve_media;
@@ -12,6 +14,7 @@ use crate::auth::key::init_jwt_keys;
 use crate::common::args::Args;
 use crate::common::log;
 use crate::common::shared::{Config, Shared};
+use crate::handler::ffmpeg_hls_process_handler::ffmpeg_hls_process_handler;
 use crate::orm::database::connect_database;
 
 mod common;
@@ -19,6 +22,7 @@ mod auth;
 mod api;
 mod orm;
 mod file;
+mod handler;
 
 pub static CONFIG: OnceCell<Config> = OnceCell::const_new();
 pub static SHARED: OnceCell<Shared> = OnceCell::const_new();
@@ -37,14 +41,20 @@ async fn main() {
       .unwrap_or("/tmp/rivulet".to_string()),
     stream_root: std::env::var("RIVULET_STREAM")
       .expect("a valid path to the media storage folder must be provided via the environment variable `RIVULET_STREAM`"),
+    hardware_acceleration: !args.disable_hardware_acceleration
   }).unwrap_or_else(|err| panic!("{err}"));
-  
+
+  let (ffmpeg_hls_process_sender, ffmpeg_hls_process_receiver) = mpsc::channel(16);
+  let ffmpeg_hls_process_running = Arc::new(RwLock::new(HashSet::new()));
+
   SHARED.set(Shared {
     database_connection: connect_database(
       std::env::var("RIVULET_DATABASE")
         .expect("a database url must be provided via the environment variable `RIVULET_DATABASE`"),
     ).await
       .expect("unable to connect to database"),
+    ffmpeg_hls_processes_running: ffmpeg_hls_process_running.clone(),
+    ffmpeg_hls_process_sender: ffmpeg_hls_process_sender,
     jwt_keys_refresh: init_jwt_keys("REFRESH").await
       .expect("a valid path to a key pair must be provided via the environment variables `RIVULET_JWT_REFRESH_PRIV_KEY` and `RIVULET_JWT_REFRESH_PUB_KEY`"),
     jwt_keys_access: init_jwt_keys("ACCESS").await
@@ -53,6 +63,10 @@ async fn main() {
 
   tokio::fs::create_dir_all(CONFIG.get().unwrap().media_root.as_str()).await.expect("failed to create media directory");
   tokio::fs::create_dir_all(CONFIG.get().unwrap().stream_root.as_str()).await.expect("failed to create stream directory");
+
+  let _ffmpeg_hls_process_handler = tokio::spawn(async move {
+    ffmpeg_hls_process_handler(ffmpeg_hls_process_running, ffmpeg_hls_process_receiver).await
+  });
 
   let app = axum::Router::new()
     .route("/api/users/check-username", get(check_username_availability))

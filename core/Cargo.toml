@@ -11,6 +11,7 @@ axum = { version = "0.8.4", features = ["multipart"] }
 clap = { version = "4.5.43", features = ["derive"] }
 nanoid = "0.4.0"
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "fs", "sync", "process"] }
+tokio-util = { version = "0.7.17", features = ["rt", "join-map"] }
 tower-http = { version = "0.6.6", features = ["fs", "limit"] }
 jsonwebtoken = "9.3.1"
 serde = { version = "1.0.219", features = ["derive"] }
