@@ -7,6 +7,7 @@ use clap::Parser;
 use tokio::sync::{mpsc, OnceCell, RwLock};
 use tower_http::services::ServeDir;
 use crate::api::auth::{login, refresh_token, verify_admin, verify_jwt};
+use crate::api::media::list_media;
 use crate::api::serve::serve_media;
 use crate::api::upload::{upload_file, upload_metadata};
 use crate::api::users::{check_username_availability, delete_user, list_users, modify_user, new_user, reset_password, set_admin};
@@ -80,6 +81,7 @@ async fn main() {
       .layer(DefaultBodyLimit::max(21 * 1024 * 1024)))
     .route("/api/media/upload/metadata", post(upload_metadata))
     .layer(middleware::from_fn(verify_admin))
+    .route("/api/media", get(list_media))
     .route("/api/media/{media_id}/serve", post(serve_media))
     .nest_service("/api/media/stream", get_service(ServeDir::new(CONFIG.get().unwrap().stream_root.as_str())))
     // .layer(middleware::from_fn(verify_jwt))  TODO

@@ -2,7 +2,7 @@ use chrono::NaiveDate;
 use nanoid::nanoid;
 use sea_orm::{ActiveModelTrait, EntityTrait, IntoActiveModel, Set};
 use entity::entities::music;
-use entity::entities::music::{ActiveModel, Entity};
+use entity::entities::music::{ActiveModel, Entity, ListPartialModel};
 use crate::api::models::upload::UploadMetadataMusic;
 use crate::common::error::ApiError;
 use crate::{CONFIG, SHARED};
@@ -60,4 +60,9 @@ pub async fn get_music_storage_path(id: &str) -> Result<String, ApiError> {
   } else {
     Ok(String::new())
   }
+}
+
+pub async fn list_music_metadata() -> Result<Vec<ListPartialModel>, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  Ok(Entity::find().into_partial_model().all(db_connection).await?)
 }

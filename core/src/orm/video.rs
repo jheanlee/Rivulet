@@ -1,7 +1,7 @@
 use nanoid::nanoid;
 use sea_orm::{ActiveModelTrait, EntityTrait, IntoActiveModel, Set};
 use entity::entities::video;
-use entity::entities::video::{ActiveModel, Entity};
+use entity::entities::video::{ActiveModel, Entity, ListPartialModel};
 use crate::api::models::upload::UploadMetadataVideo;
 use crate::common::error::ApiError;
 use crate::{CONFIG, SHARED};
@@ -48,4 +48,9 @@ pub async fn get_video_storage_path(id: &str) -> Result<String, ApiError> {
   } else {
     Ok(String::new())
   }
+}
+
+pub async fn list_video_metadata() -> Result<Vec<ListPartialModel>, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  Ok(Entity::find().into_partial_model().all(db_connection).await?)
 }
