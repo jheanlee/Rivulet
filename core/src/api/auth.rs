@@ -7,7 +7,7 @@ use axum::response::{IntoResponse, Response};
 use jsonwebtoken::{get_current_timestamp, Algorithm, Validation};
 use crate::auth::jwt::{generate_access_token, generate_refresh_token, Claims, PlaybackClaims};
 use crate::common::error::ApiError;
-use crate::orm::user::{authenticate_user, is_admin};
+use crate::orm::user::{authenticate_user, if_user_id_exists, is_admin};
 use crate::SHARED;
 
 pub async fn verify_playback_token(header_map: HeaderMap, request: Request, next: Next) -> Result<Response, StatusCode> {
@@ -16,9 +16,14 @@ pub async fn verify_playback_token(header_map: HeaderMap, request: Request, next
     validation.set_required_spec_claims(&["exp"]);
 
     match jsonwebtoken::decode::<PlaybackClaims>(token.to_str().unwrap_or_else(|_| {""}), &SHARED.get().unwrap().jwt_keys_access.decoding_key, &validation) {
-      Ok(_) => {
-        let response = next.run(request).await;
-        Ok(response)
+      Ok(token_data) => {
+        let path: Vec<&str> = request.uri().path().split('/').collect();
+        if path.starts_with(&["api", "media", "stream"]) && path.len() >= 5 && Some(&token_data.claims.media_id.as_str()) == path.get(3) {
+          let response = next.run(request).await;
+          Ok(response)
+        } else {
+          Err(StatusCode::FORBIDDEN)
+        }
       },
       Err(_) => Err(StatusCode::UNAUTHORIZED)
     }
@@ -34,8 +39,7 @@ pub async fn verify_jwt(header_map: HeaderMap, request: Request, next: Next) -> 
     validation.set_required_spec_claims(&["sub", "iat", "exp"]);
 
     match jsonwebtoken::decode::<Claims>(token.to_str().unwrap_or_else(|_| {""}), &SHARED.get().unwrap().jwt_keys_access.decoding_key, &validation) {
-      Ok(token_data) => {
-        //  TODO
+      Ok(_token_data) => {
         let response = next.run(request).await;
         Ok(response)
       },
@@ -55,13 +59,17 @@ pub async fn verify_admin(header_map: HeaderMap, request: Request, next: Next) -
     match jsonwebtoken::decode::<Claims>(token.to_str().unwrap_or_else(|_| {""}), &SHARED.get().unwrap().jwt_keys_access.decoding_key, &validation) {
       Ok(data) => {
         match is_admin(data.claims.sub).await {
-          Ok(is_admin) if is_admin.is_none() => Err(StatusCode::UNAUTHORIZED)?,
-          Ok(is_admin) if !is_admin.unwrap() => Err(StatusCode::FORBIDDEN)?,
-          Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR)?,
-          _ => {}
+          Ok(is_admin) if !is_admin => {
+            Err(StatusCode::FORBIDDEN)
+          },
+          Err(error) => {
+            Err(error.into_response().status())
+          },
+          _ => {
+            let response = next.run(request).await;
+            Ok(response)
+          }
         }
-        let response = next.run(request).await;
-        Ok(response)
       },
       Err(_) => Err(StatusCode::UNAUTHORIZED)
     }
@@ -77,16 +85,21 @@ pub struct UserAuthentication {
 }
 
 pub async fn login(Json(authentication): Json<UserAuthentication>) -> Result<Response, ApiError> {
-  let res = authenticate_user(authentication.username.clone(), authentication.password).await?;
-  if res.is_none() || !res.unwrap() {
-    Ok(StatusCode::UNAUTHORIZED.into_response())
-  } else {
-    let response_builder = Response::builder().header(http::header::CONTENT_TYPE, "application/json");
-    let response_body = Body::from(serde_json::json!({
-      "refresh_token": generate_refresh_token(authentication.username.clone())?,
-      "access_token": generate_access_token(authentication.username)?
-    }).to_string());
-    Ok(response_builder.body(response_body)?)
+  match authenticate_user(authentication.username.clone(), authentication.password).await {
+    Ok(user_id) => {
+      let response_builder = Response::builder().header(http::header::CONTENT_TYPE, "application/json");
+      let response_body = Body::from(serde_json::json!({
+      "refresh_token": generate_refresh_token(user_id.clone())?,
+      "access_token": generate_access_token(user_id)?
+      }).to_string());
+      Ok(response_builder.body(response_body)?)
+    }
+    Err(error) => {
+      match error {
+        ApiError::Error(_) => Err(error),
+        _ => Err(ApiError::Unauthorized)
+      }
+    }
   }
 }
 
@@ -100,7 +113,7 @@ pub async fn refresh_token(Json(tokens): Json<Tokens>) -> Result<Response, ApiEr
   let mut validation_refresh = Validation::new(Algorithm::RS256);
   validation_refresh.set_required_spec_claims(&["sub", "iat", "exp"]);
 
-  let refresh_token_data: Result<jsonwebtoken::TokenData<crate::auth::jwt::Claims>, jsonwebtoken::errors::Error> =
+  let refresh_token_data: Result<jsonwebtoken::TokenData<Claims>, jsonwebtoken::errors::Error> =
     jsonwebtoken::decode(tokens.refresh_token.as_str(), &SHARED.get().unwrap().jwt_keys_refresh.decoding_key, &validation_refresh);
 
   if let Ok(refresh_token_data) = refresh_token_data {
@@ -108,26 +121,27 @@ pub async fn refresh_token(Json(tokens): Json<Tokens>) -> Result<Response, ApiEr
     validation_access.set_required_spec_claims(&["sub", "iat"]);
     validation_access.validate_exp = false;
 
-    let access_token_data: Result<jsonwebtoken::TokenData<crate::auth::jwt::Claims>, jsonwebtoken::errors::Error> =
+    let access_token_data: Result<jsonwebtoken::TokenData<Claims>, jsonwebtoken::errors::Error> =
       jsonwebtoken::decode(tokens.access_token.as_str(), &SHARED.get().unwrap().jwt_keys_access.decoding_key, &validation_access);
 
     if let Ok(access_token_data) = access_token_data {
-      if access_token_data.claims.exp + 24 * 60 * 60 >= get_current_timestamp() {
+      if if_user_id_exists(access_token_data.claims.sub).await? && access_token_data.claims.exp + 30 * 24 * 60 * 60 >= get_current_timestamp() {
         let new_access_token = generate_access_token(refresh_token_data.claims.sub);
 
         let response_builder = Response::builder().header(http::header::CONTENT_TYPE, "application/json");
         let response_body = Body::from(serde_json::json!({
           "access_token" :new_access_token?
         }).to_string());
+        
         let response = response_builder.body(response_body)?;
         Ok(response)
       } else {
-        Ok(StatusCode::UNAUTHORIZED.into_response())
+        Err(ApiError::Unauthorized)
       }
     } else {
-      Ok(StatusCode::UNAUTHORIZED.into_response())
+      Err(ApiError::Unauthorized)
     }
   } else {
-    Ok(StatusCode::UNAUTHORIZED.into_response())
+    Err(ApiError::Unauthorized)
   }
 }

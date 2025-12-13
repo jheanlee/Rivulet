@@ -6,7 +6,7 @@ use axum::routing::{delete, get, get_service, patch, post, put};
 use clap::Parser;
 use tokio::sync::{mpsc, OnceCell, RwLock};
 use tower_http::services::ServeDir;
-use crate::api::auth::{login, refresh_token, verify_admin, verify_jwt};
+use crate::api::auth::{login, refresh_token, verify_admin, verify_jwt, verify_playback_token};
 use crate::api::media::list_media;
 use crate::api::serve::serve_media;
 use crate::api::upload::{upload_file, upload_metadata};
@@ -83,8 +83,12 @@ async fn main() {
     .layer(middleware::from_fn(verify_admin))
     .route("/api/media", get(list_media))
     .route("/api/media/{media_id}/serve", post(serve_media))
-    .nest_service("/api/media/stream", get_service(ServeDir::new(CONFIG.get().unwrap().stream_root.as_str())))
-    // .layer(middleware::from_fn(verify_jwt))  TODO
+    .layer(middleware::from_fn(verify_jwt))
+    .nest_service(
+      "/api/media/stream",
+      get_service(ServeDir::new(CONFIG.get().unwrap().stream_root.as_str()))
+        .route_layer(middleware::from_fn(verify_playback_token))
+    )
     .route("/api/auth/login", post(login))
     .route("/api/auth/refresh-token", post(refresh_token));
 

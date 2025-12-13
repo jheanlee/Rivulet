@@ -13,7 +13,7 @@ pub fn generate_refresh_token(sub: String) -> Result<String, ApiError> {
   let claims = Claims {
     sub: sub,
     iat: get_current_timestamp(),
-    exp: get_current_timestamp() + 86400,
+    exp: get_current_timestamp() + 30 * 24 * 60 * 60,
   };
   let token = jsonwebtoken::encode(&Header::new(Algorithm::RS256), &claims, &SHARED.get().unwrap().jwt_keys_refresh.encoding_key)?;
   Ok(token)

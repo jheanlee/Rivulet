@@ -35,22 +35,16 @@ pub async fn if_username_exists(username: String) -> Result<bool, ApiError> {
     .is_some())
 }
 
-pub async fn list_users() -> Result<Vec<user::PartialModel>, ApiError> {
+pub async fn is_admin(user_id: String) -> Result<bool, ApiError> {
   let db_connection = &SHARED.get().unwrap().database_connection;
-  Ok(user::Entity::find().into_partial_model().all(db_connection).await?)
-}
-
-pub async fn is_admin(username: String) -> Result<Option<bool>, ApiError> {
-  let db_connection = &SHARED.get().unwrap().database_connection;
-  let user = user::Entity::find()
-    .filter(user::Column::Username.eq(username))
+  let user = user::Entity::find_by_id(user_id)
     .one(db_connection)
     .await?;
 
   if let Some(user) = user {
-    Ok(Some(user.administrator))
+    Ok(user.administrator)
   } else {
-    Ok(None)
+    Err(ApiError::NotFound)
   }
 }
 
@@ -64,6 +58,26 @@ pub async fn set_admin(user_id: String, is_administrator: bool) -> Result<(), Ap
   user.administrator = Set(is_administrator);
   user.update(db_connection).await?;
   Ok(())
+}
+
+pub async fn get_user_id(username: String) -> Result<String, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+
+  let user = user::Entity::find()
+    .filter(user::Column::Username.eq(username))
+    .one(db_connection)
+    .await?;
+
+  if let Some(user) = user {
+    Ok(user.id)
+  } else {
+    Err(ApiError::NotFound)
+  }
+}
+
+pub async fn list_users() -> Result<Vec<user::PartialModel>, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  Ok(user::Entity::find().into_partial_model().all(db_connection).await?)
 }
 
 pub async fn reset_password(user_id: String, old_password: String, new_password: String) -> Result<(), ApiError> {
@@ -158,9 +172,7 @@ pub async fn delete_user(user_id: String) -> Result<u64, ApiError> {
   }
 }
 
-
-
-pub async fn authenticate_user(username: String, password: String) -> Result<Option<bool>, ApiError> {
+pub async fn authenticate_user(username: String, password: String) -> Result<String, ApiError> {
   let db_connection = &SHARED.get().unwrap().database_connection;
   let user = user::Entity::find()
     .filter(user::Column::Username.eq(username))
@@ -168,8 +180,12 @@ pub async fn authenticate_user(username: String, password: String) -> Result<Opt
     .await?;
 
   if let Some(user) = user {
-    Ok(Some(process_password(password, user.salt.as_bytes())? == user.hashed_password))
+    if process_password(password, user.salt.as_bytes())? == user.hashed_password {
+      Ok(user.id)
+    } else {
+      Err(ApiError::NotFound)
+    }
   } else {
-    Ok(None)
+    Err(ApiError::NotFound)
   }
 }
