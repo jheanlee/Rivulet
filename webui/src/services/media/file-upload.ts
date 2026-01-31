@@ -1,9 +1,9 @@
 import { fetcher } from "@/services/fetcher.ts";
 import { isAxiosError } from "axios";
-import type { musicSchema } from "@/components/forms/media_upload/music.tsx";
+import type { musicSchema } from "@/components/forms/media-upload/music.tsx";
 import { z } from "zod";
-import type { videoSchema } from "@/components/forms/media_upload/video.tsx";
-import type { movieSchema } from "@/components/forms/media_upload/movie.tsx";
+import type { videoSchema } from "@/components/forms/media-upload/video.tsx";
+import type { movieSchema } from "@/components/forms/media-upload/movie.tsx";
 import { useUpdateStore } from "@/store/upload.ts";
 import { toast } from "sonner";
 

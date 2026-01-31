@@ -51,7 +51,7 @@ export const LoginForm = () => {
       case 401:
         return "Incorrect username or password.";
       case 500:
-        return "Unable to connect to server.";
+        return "Unable to connect to the server.";
       default:
         return `An error has occurred. Error code: ${submitStatus}`;
     }

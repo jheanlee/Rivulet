@@ -17,73 +17,78 @@ pub async fn convert_hls(id: &str, path: &str) -> Result<(), ApiError> {
 
   if !(*processes_running).contains(&String::from(id)) {
     match check_hls_stream(id).await {
-      Ok(exists) if exists => {}
+      Ok(exists) if exists => Ok(()),
       _ => {
-        let hls_segment_filename = format!("{stream_out_dir}/data%03d.ts");
-        let master_filename = format!("{stream_out_dir}/stream.m3u8");
+        if try_exists(path).await? {
+          let hls_segment_filename = format!("{stream_out_dir}/data%03d.ts");
+          let master_filename = format!("{stream_out_dir}/stream.m3u8");
 
-        let mut args = Vec::with_capacity(23);
-        args.extend_from_slice(&[
-          "-i", path,
-          "-crf", "18",
-          "-b:a", "192k"
-        ]);
+          let mut args = Vec::with_capacity(23);
+          args.extend_from_slice(&[
+            "-i", path,
+            "-crf", "18",
+            "-b:a", "192k"
+          ]);
 
-        match get_video_codec(path).await? {
-          VideoCodec::Unsupported(_) => {
-            args.push("-codec:v");
-            if CONFIG.get().unwrap().hardware_acceleration && cfg!(target_os = "macos") {
-              args.push("h264_videotoolbox");
-            } else if false { //  TODO
-              args.push("h264_vaapi"); //  TODO test
-            } else {
-              args.push("libx264");
+          match get_video_codec(path).await? {
+            VideoCodec::Unsupported(_) => {
+              args.push("-codec:v");
+              if CONFIG.get().unwrap().hardware_acceleration && cfg!(target_os = "macos") {
+                args.push("h264_videotoolbox");
+              } else if false { //  TODO
+                args.push("h264_vaapi"); //  TODO test
+              } else {
+                args.push("libx264");
+              }
+            }
+            _ => {
+              args.push("-codec:v");
+              args.push("copy");
             }
           }
-          _ => {
-            args.push("-codec:v");
-            args.push("copy");
+
+          match get_audio_codec(path).await? {
+            AudioCodec::Unsupported(_) => {
+              args.push("-codec:a");
+              args.push("mp3");
+            }
+            _ => {
+              args.push("-codec:a");
+              args.push("copy");
+            }
           }
-        }
 
-        match get_audio_codec(path).await? {
-          AudioCodec::Unsupported(_) => {
-            args.push("-codec:a");
-            args.push("mp3");
+          args.extend_from_slice(&[
+            "-f", "hls",
+            "-hls_list_size", "0",
+            "-hls_time", "6",
+            "-hls_segment_type", "mpegts",
+            "-hls_flags", "independent_segments",
+            "-hls_segment_filename", hls_segment_filename.as_str(),
+            master_filename.as_str()
+          ]);
+
+          let args_strings: Vec<String> = args.into_iter().map(String::from).collect();
+
+          if let Ok(mut child) = tokio::process::Command::new("ffmpeg")
+            .args(args_strings)
+            .spawn() {
+            let process_future = async move {
+              let _res = child.wait().await;
+            };
+            let _res = SHARED.get().unwrap().ffmpeg_hls_process_sender.clone().send((String::from(id), Box::pin(process_future))).await;
           }
-          _ => {
-            args.push("-codec:a");
-            args.push("copy");
-          }
+
+          sleep(Duration::from_millis(3000)).await;
+          Ok(())
+        } else {
+          Err(ApiError::NotFound)
         }
-
-        args.extend_from_slice(&[
-          "-f", "hls",
-          "-hls_list_size", "0",
-          "-hls_time", "6",
-          "-hls_segment_type", "mpegts",
-          "-hls_flags", "independent_segments",
-          "-hls_segment_filename", hls_segment_filename.as_str(),
-          master_filename.as_str()
-        ]);
-
-        let args_strings: Vec<String> = args.into_iter().map(String::from).collect();
-
-        if let Ok(mut child) = tokio::process::Command::new("ffmpeg")
-          .args(args_strings)
-          .spawn() {
-          let process_future = async move {
-            let _res = child.wait().await;
-          };
-          let _res = SHARED.get().unwrap().ffmpeg_hls_process_sender.clone().send((String::from(id), Box::pin(process_future))).await;
-        }
-
-        sleep(Duration::from_millis(3000)).await;
       }
     }
+  } else {
+    Ok(())
   }
-
-  Ok(())
 }
 
 async fn check_hls_stream(id: &str) -> Result<bool, ApiError> {

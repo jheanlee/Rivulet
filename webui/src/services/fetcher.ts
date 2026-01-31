@@ -13,8 +13,8 @@ export const cronFetcher = axios.create();
 cronFetcher.interceptors.request.use(async (config) => {
   const access_token = localStorage.getItem("rivulet.access_token");
   if (access_token === null) {
+    toast.error("Session expired");
     window.location.href = paths.root.login.getHref();
-    toast.error("Login required");
     return config;
   }
 
@@ -26,8 +26,8 @@ cronFetcher.interceptors.request.use(async (config) => {
     ).exp <
     Date.now() / 1000
   ) {
-    window.location.href = paths.root.login.getHref();
     toast.error("Session expired");
+    window.location.href = paths.root.login.getHref();
     return config;
   }
   return config;
@@ -39,8 +39,8 @@ export const fetcher = axios.create();
 fetcher.interceptors.request.use(async (config) => {
   const access_token = localStorage.getItem("rivulet.access_token");
   if (access_token === null) {
-    window.location.href = paths.root.login.getHref();
     toast.error("Login required");
+    window.location.href = paths.root.login.getHref();
     return config;
   }
 
@@ -54,8 +54,8 @@ fetcher.interceptors.request.use(async (config) => {
   ) {
     const res = await refreshToken();
     if (res !== 200) {
-      window.location.href = paths.root.login.getHref();
       toast.error("Session expired");
+      window.location.href = paths.root.login.getHref();
       return config;
     }
   }

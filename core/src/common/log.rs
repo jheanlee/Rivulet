@@ -81,7 +81,7 @@ pub fn init(verbose_level: u8, system_filter: u8, stdout_enabled: bool, system_l
         50..=59 => LevelFilter::Warn,   //  OS_LOG_TYPE_ERROR
         60.. => LevelFilter::Error      //  OS_LOG_TYPE_FAULT
       };
-      oslog::OsLogger::new("cloud.drizzling.rivulet")
+      oslog::OsLogger::new("cloud.silvergrass.rivulet")
         .level_filter(level_filter)
         .init()
         .expect("unable to initialise os_log");

@@ -81,7 +81,7 @@ async fn main() {
       .layer(DefaultBodyLimit::max(21 * 1024 * 1024)))
     .route("/api/media/upload/metadata", post(upload_metadata))
     .layer(middleware::from_fn(verify_admin))
-    .route("/api/media", get(list_media))
+    .route("/api/media/{media_type}", get(list_media))
     .route("/api/media/{media_id}/serve", post(serve_media))
     .layer(middleware::from_fn(verify_jwt))
     .nest_service(

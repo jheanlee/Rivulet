@@ -18,7 +18,7 @@ pub async fn verify_playback_token(header_map: HeaderMap, request: Request, next
     match jsonwebtoken::decode::<PlaybackClaims>(token.to_str().unwrap_or_else(|_| {""}), &SHARED.get().unwrap().jwt_keys_access.decoding_key, &validation) {
       Ok(token_data) => {
         let path: Vec<&str> = request.uri().path().split('/').collect();
-        if path.starts_with(&["api", "media", "stream"]) && path.len() >= 5 && Some(&token_data.claims.media_id.as_str()) == path.get(3) {
+        if path.starts_with(&[""]) && path.len() == 3 && Some(&token_data.claims.media_id.as_str()) == path.get(1) {
           let response = next.run(request).await;
           Ok(response)
         } else {

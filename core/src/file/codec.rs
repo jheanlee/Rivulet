@@ -24,7 +24,7 @@ pub async fn get_video_codec(path: &str) -> Result<VideoCodec, ApiError> {
     .arg("-of").arg("default=noprint_wrappers=1:nokey=1")
     .arg(path)
     .output().await?;
-  
+
   if child.status.success() {
     match child.stdout.get(0..) {
       Some(val) => {

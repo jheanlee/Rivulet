@@ -7,9 +7,10 @@ interface RequestServeProps {
 }
 export const requestServe = async ({ id }: RequestServeProps) => {
   try {
-    return await fetcher.post<{
+    let res = await fetcher.post<{
       playback_token: string;
     }>(`/api/media/${id}/serve`);
+    return res.data.playback_token;
   } catch (error) {
     if (isAxiosError(error)) {
       return error.status || 500;
@@ -20,24 +21,43 @@ export const requestServe = async ({ id }: RequestServeProps) => {
 
 interface PlayHlsProps {
   id: string;
+  token: string | undefined;
   element: HTMLVideoElement;
+  setIsPlaying: (arg0: boolean) => void;
+  onAutoplayFailed: () => void;
 }
-export const playHls = ({ id, element }: PlayHlsProps) => {
+export const initHls = async ({
+  id,
+  token,
+  element,
+  setIsPlaying,
+  onAutoplayFailed,
+}: PlayHlsProps) => {
   if (Hls.isSupported()) {
     let hls = new Hls({
       xhrSetup: (xhr) => {
-        xhr.setRequestHeader("Authorization", "");
+        xhr.setRequestHeader("Authorization", token ?? "");
       },
     });
     hls.loadSource(`/api/media/stream/${id}/stream.m3u8`);
     hls.attachMedia(element);
-    hls.on(Hls.Events.MANIFEST_PARSED, function () {
-      element.play();
+    hls.on(Hls.Events.MANIFEST_PARSED, async () => {
+      try {
+        await element.play();
+        setIsPlaying(!element.paused);
+      } catch (error) {
+        onAutoplayFailed();
+      }
     });
   } else if (element.canPlayType("application/vnd.apple.mpegurl")) {
     element.src = `/api/media/stream/${id}/stream.m3u8`;
-    element.addEventListener("canplay", function () {
-      element.play();
+    element.addEventListener("canplay", async () => {
+      try {
+        await element.play();
+        setIsPlaying(!element.paused);
+      } catch (error) {
+        onAutoplayFailed();
+      }
     });
   }
 };
