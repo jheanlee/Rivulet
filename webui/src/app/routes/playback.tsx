@@ -1,9 +1,6 @@
 import { useNavigate, useParams } from "react-router";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { paths } from "@/config/paths.ts";
-import { requestServe } from "@/services/media/serve.ts";
-import ReactPlayer from "react-player";
-import { toast } from "sonner";
 import { HlsPlayer } from "@/components/players/hls-player.tsx";
 
 export const Playback = () => {
