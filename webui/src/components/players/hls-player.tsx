@@ -27,6 +27,7 @@ export const HlsPlayer = ({ playbackId }: HlsPlayerProps) => {
   const [showPlayButton, setShowPlayButton] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(true);
   const [volume, setVolume] = useState<number>(80);
+  const [showVolume, setShowVolume] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(
     document.fullscreenElement !== null,
   );
@@ -170,35 +171,44 @@ export const HlsPlayer = ({ playbackId }: HlsPlayerProps) => {
                 {isPlaying ? <Pause /> : <Play />}
               </Button>
 
-              <Button variant="ghost" className="pointer-events-none">
+              <Button
+                variant="ghost"
+                className="pointer-events-auto hover:bg-transparent!"
+                onMouseEnter={() => setShowVolume(true)}
+                onMouseLeave={() => setShowVolume(false)}
+              >
                 {(() => {
                   if (volume == 0) return <VolumeX />;
                   else if (volume < 40) return <Volume1 />;
                   else return <Volume2 />;
                 })()}
               </Button>
-              <Slider
-                className="pointer-events-auto w-18 [&>span:first-child]:h-[4px]"
-                value={[volume]}
-                max={100}
-                min={0}
-                step={1}
-                onValueChange={(value) => {
-                  if (mouseTimer.current) {
-                    clearTimeout(mouseTimer.current);
-                    setShowControls(true);
-                  }
-                  mouseTimer.current = window.setTimeout(() => {
-                    setShowControls(false);
-                    mouseTimer.current = null;
-                  }, 3000);
+              {showVolume && (
+                <Slider
+                  className="pointer-events-auto w-18 [&>span:first-child]:h-[4px]"
+                  onMouseEnter={() => setShowVolume(true)}
+                  onMouseLeave={() => setShowVolume(false)}
+                  value={[volume]}
+                  max={100}
+                  min={0}
+                  step={1}
+                  onValueChange={(value) => {
+                    if (mouseTimer.current) {
+                      clearTimeout(mouseTimer.current);
+                      setShowControls(true);
+                    }
+                    mouseTimer.current = window.setTimeout(() => {
+                      setShowControls(false);
+                      mouseTimer.current = null;
+                    }, 3000);
 
-                  setVolume(value[0]);
-                  if (playerRef !== null) {
-                    playerRef.volume = value[0] / 100;
-                  }
-                }}
-              />
+                    setVolume(value[0]);
+                    if (playerRef !== null) {
+                      playerRef.volume = value[0] / 100;
+                    }
+                  }}
+                />
+              )}
             </div>
 
             <Button
