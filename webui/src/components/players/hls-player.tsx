@@ -51,6 +51,17 @@ export const HlsPlayer = ({ playbackId }: HlsPlayerProps) => {
   };
 
   useEffect(() => {
+    document.addEventListener("fullscreenchange", () =>
+      setIsFullscreen(document.fullscreenElement !== null),
+    );
+    return () => {
+      document.removeEventListener("fullscreenchange", () =>
+        setIsFullscreen(document.fullscreenElement !== null),
+      );
+    };
+  }, []);
+
+  useEffect(() => {
     const prePlaybackHandling = async () => {
       const res = await requestServe({ id: playbackId });
       if (typeof res === "number") {
@@ -221,7 +232,6 @@ export const HlsPlayer = ({ playbackId }: HlsPlayerProps) => {
                   } else {
                     await containerRef?.requestFullscreen();
                   }
-                  setIsFullscreen(document.fullscreenElement !== null);
                 };
 
                 void (async () => await setFullscreen())();
