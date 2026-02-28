@@ -12,28 +12,28 @@ const createAppRouter = () =>
         {
           path: paths.root.home.path,
           lazy: async () => {
-            let { Home } = await import("@/app/routes/home");
+            const { Home } = await import("@/app/routes/home");
             return { Component: Home };
           },
         },
         {
           path: paths.root.media.wrapper.path,
           lazy: async () => {
-            let { MediaWrapper } = await import("@/app/routes/media/root");
+            const { MediaWrapper } = await import("@/app/routes/media/root");
             return { Component: MediaWrapper };
           },
         },
         {
           path: paths.root.login.path,
           lazy: async () => {
-            let { Login } = await import("@/app/routes/login");
+            const { Login } = await import("@/app/routes/login");
             return { Component: Login };
           },
         },
         {
           path: "*",
           lazy: async () => {
-            let { NotFound } = await import("@/app/routes/not-found");
+            const { NotFound } = await import("@/app/routes/not-found");
             return { Component: NotFound };
           },
         },
@@ -42,7 +42,7 @@ const createAppRouter = () =>
     {
       path: paths.playback.path,
       lazy: async () => {
-        let { Playback } = await import("@/app/routes/playback");
+        const { Playback } = await import("@/app/routes/playback");
         return { Component: Playback };
       },
     },

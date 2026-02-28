@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { paths } from "@/config/paths.ts";
 
 export interface MusicListItem {
+  type: "music";
   id: string;
   title: string;
   artists: string[];
@@ -11,12 +12,14 @@ export interface MusicListItem {
 }
 
 export interface VideoListItem {
+  type: "video";
   id: string;
   title: string;
   creator: string;
 }
 
 export interface MovieListItem {
+  type: "movie";
   id: string;
   title: string;
   year: number | null;
@@ -63,8 +66,15 @@ export const getMediaData = async ({ mediaType }: GetMediaDataProps) => {
 
 const listMusicMedia = async () => {
   try {
-    const res = await fetcher.get<MusicListItem[]>("/api/media/music");
-    return res.data;
+    const res =
+      await fetcher.get<Omit<MusicListItem, "type">[]>("/api/media/music");
+    return res.data.map(
+      (data) =>
+        ({
+          ...data,
+          type: "music",
+        }) as MusicListItem,
+    );
   } catch (error) {
     if (isAxiosError(error)) {
       return error.status ?? 500;
@@ -76,8 +86,15 @@ const listMusicMedia = async () => {
 
 const listVideoMedia = async () => {
   try {
-    const res = await fetcher.get<VideoListItem[]>("/api/media/video");
-    return res.data;
+    const res =
+      await fetcher.get<Omit<VideoListItem, "type">[]>("/api/media/video");
+    return res.data.map(
+      (data) =>
+        ({
+          ...data,
+          type: "video",
+        }) as VideoListItem,
+    );
   } catch (error) {
     if (isAxiosError(error)) {
       return error.status ?? 500;
@@ -89,8 +106,15 @@ const listVideoMedia = async () => {
 
 const listMovieMedia = async () => {
   try {
-    const res = await fetcher.get<MovieListItem[]>("/api/media/movie");
-    return res.data;
+    const res =
+      await fetcher.get<Omit<MovieListItem, "type">[]>("/api/media/movie");
+    return res.data.map(
+      (data) =>
+        ({
+          ...data,
+          type: "movie",
+        }) as MovieListItem,
+    );
   } catch (error) {
     if (isAxiosError(error)) {
       return error.status ?? 500;

@@ -17,12 +17,12 @@ export const paths = {
         getHref: () => "/media/music",
       },
       movies: {
-        path: "media/movies",
-        getHref: () => "/media/movies",
+        path: "media/movie",
+        getHref: () => "/media/movie",
       },
       videos: {
-        path: "media/videos",
-        getHref: () => "/media/videos",
+        path: "media/video",
+        getHref: () => "/media/video",
       },
     },
     login: {

@@ -20,23 +20,24 @@ import {
   type MusicListItem,
   type VideoListItem,
 } from "@/services/media/list.ts";
+import { MediaList } from "@/components/lists/music-list-item.tsx";
 
 export const MediaWrapper = () => {
   const path = useParams();
   switch (path.mediaType) {
     case "music":
       return Media({ mediaType: "music" });
-    case "movies":
-      return Media({ mediaType: "movies" });
-    case "videos":
-      return Media({ mediaType: "videos" });
+    case "movie":
+      return Media({ mediaType: "movie" });
+    case "video":
+      return Media({ mediaType: "video" });
     default:
       return NotFound();
   }
 };
 
 export interface MediaProp {
-  mediaType: "music" | "movies" | "videos";
+  mediaType: "music" | "movie" | "video";
 }
 
 export const Media = ({ mediaType }: MediaProp) => {
@@ -45,26 +46,19 @@ export const Media = ({ mediaType }: MediaProp) => {
   const [mediaItems, setMediaItems] = useState<
     MusicListItem[] | VideoListItem[] | MovieListItem[] | undefined
   >(undefined);
+  const [reloadTrigger, setReloadTrigger] = useState<boolean>(false);
+
+  const onMusicFormExit = () => {
+    setUploadDialogOpen(false);
+    setReloadTrigger(!reloadTrigger);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
-      switch (mediaType) {
-        case "music": {
-          setMediaItems(await getMediaData({ mediaType: "music" }));
-          break;
-        }
-        case "videos": {
-          setMediaItems(await getMediaData({ mediaType: "video" }));
-          break;
-        }
-        case "movies": {
-          setMediaItems(await getMediaData({ mediaType: "movie" }));
-          break;
-        }
-      }
+      setMediaItems(await getMediaData({ mediaType: mediaType }));
     };
     (async () => await fetchData())();
-  }, []);
+  }, [mediaType, reloadTrigger]);
 
   return (
     <div className="flex flex-col px-12 py-4">
@@ -102,20 +96,24 @@ export const Media = ({ mediaType }: MediaProp) => {
             </VisuallyHidden>
             <DialogContent className="h-3/4 overflow-y-scroll">
               {mediaType == "music" && (
-                <UploadMusicForm onExit={() => setUploadDialogOpen(false)} />
+                <UploadMusicForm onExit={onMusicFormExit} />
               )}
-              {mediaType == "videos" && (
-                <UploadVideoForm onExit={() => setUploadDialogOpen(false)} />
+              {mediaType == "video" && (
+                <UploadVideoForm onExit={onMusicFormExit} />
               )}
-              {mediaType == "movies" && (
-                <UploadMovieForm onExit={() => setUploadDialogOpen(false)} />
+              {mediaType == "movie" && (
+                <UploadMovieForm onExit={onMusicFormExit} />
               )}
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <div className="flex flex-col m-4"></div>
+      <div className="flex flex-col m-4">
+        {mediaItems !== undefined && (
+          <MediaList type={mediaType} items={mediaItems} />
+        )}
+      </div>
     </div>
   );
 };
