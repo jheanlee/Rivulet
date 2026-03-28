@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button.tsx";
 
 export const Navbar = () => {
   return (
-    <div className="w-full flex flex-row justify-between p-3">
+    <div className="hidden md:flex w-full flex-row justify-between p-3">
       <NavigationMenu viewport={false}>
         <NavigationMenuList>
           <NavigationMenuItem>
@@ -36,7 +36,7 @@ export const Navbar = () => {
               asChild
               className={navigationMenuTriggerStyle()}
             >
-              <NavLink to={paths.root.media.videos.getHref()}>Videos</NavLink>
+              <NavLink to={paths.root.media.videos.getHref()}>Video</NavLink>
             </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
@@ -44,7 +44,7 @@ export const Navbar = () => {
               asChild
               className={navigationMenuTriggerStyle()}
             >
-              <NavLink to={paths.root.media.movies.getHref()}>Movies</NavLink>
+              <NavLink to={paths.root.media.movies.getHref()}>Movie</NavLink>
             </NavigationMenuLink>
           </NavigationMenuItem>
         </NavigationMenuList>

@@ -37,14 +37,14 @@ const formSchema = z.object({
     .max(256, {
       message: "Password must not exceed 256 characters.",
     })
-    .regex(/^[A-Za-z0-9~!@#$%^&*()_\-+={}\[\]|\\:;,.\/]+$/, {
+    .regex(/^[A-Za-z0-9~!@#$%^&*()_\-+={}[\]|\\:;,./]+$/, {
       message:
         "Password should only contain letters (A-Z, a-z), numbers (0-9) and symbols.",
     }),
 });
 
 export const LoginForm = () => {
-  let navigate = useNavigate();
+  const navigate = useNavigate();
   const [submitStatus, setSubmitStatus] = useState<number>(200);
   const getSubmitStatusMessage = () => {
     switch (submitStatus) {
@@ -66,7 +66,7 @@ export const LoginForm = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    let res = await login(values);
+    const res = await login(values);
     setSubmitStatus(res);
     if (res === 200) {
       navigate(paths.root.home.getHref());
@@ -74,10 +74,10 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="w-full h-full flex justify-center content-center">
+    <div className="w-full h-full flex justify-center items-center">
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="w-100 h-70 mt-20 flex flex-col gap-4 content-center"
+        className="w-70 md:w-100 h-70 flex flex-col gap-4 content-center"
       >
         <FieldSet data-invalid={submitStatus !== 200}>
           <FieldGroup>

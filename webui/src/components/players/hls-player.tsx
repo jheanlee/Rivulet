@@ -1,7 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { initHls, requestServe } from "@/services/media/serve.ts";
-import { paths } from "@/config/paths.ts";
-import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button.tsx";
 import {
@@ -14,6 +11,8 @@ import {
   VolumeX,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider.tsx";
+import { useHls } from "@/services/media/use-hls.tsx";
+import { usePrePlaybackHandling } from "@/services/media/use-pre-playback-handling.tsx";
 
 interface HlsPlayerProps {
   playbackId: string;
@@ -26,6 +25,7 @@ export const HlsPlayer = ({ playbackId }: HlsPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [showPlayButton, setShowPlayButton] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(true);
+  const [isIosPlayer, setIsIosPlayer] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(80);
   const [showVolume, setShowVolume] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(
@@ -34,6 +34,16 @@ export const HlsPlayer = ({ playbackId }: HlsPlayerProps) => {
   const mouseTimer = useRef<number | null>(null);
   const [videoCurrentTime, setVideoCurrentTime] = useState<number>(0);
   const [videoDuration, setVideoDuration] = useState<number>(0);
+
+  const token = usePrePlaybackHandling({ id: playbackId }).token;
+
+  const hlsInstance = useHls({
+    id: playbackId,
+    token: token,
+    element: playerRef,
+    setIsPlaying: setIsPlaying,
+    onAutoplayFailed: () => setShowPlayButton(true),
+  });
 
   const formatTime = (time: number) => {
     const hours = Math.floor(time / 3600);
@@ -51,59 +61,54 @@ export const HlsPlayer = ({ playbackId }: HlsPlayerProps) => {
   };
 
   useEffect(() => {
-    document.addEventListener("fullscreenchange", () =>
-      setIsFullscreen(document.fullscreenElement !== null),
-    );
+    const updateIsFullscreen = () =>
+      setIsFullscreen(document.fullscreenElement !== null);
+
+    document.addEventListener("fullscreenchange", updateIsFullscreen);
     return () => {
-      document.removeEventListener("fullscreenchange", () =>
-        setIsFullscreen(document.fullscreenElement !== null),
-      );
+      document.removeEventListener("fullscreenchange", updateIsFullscreen);
     };
   }, []);
 
   useEffect(() => {
-    const prePlaybackHandling = async () => {
-      const res = await requestServe({ id: playbackId });
-      if (typeof res === "number") {
-        switch (res) {
-          case 401: {
-            toast.error("Session expired");
-            navigate(paths.root.login.getHref());
-            break;
-          }
-          case 403: {
-            toast.error("Access denied");
-            break;
-          }
-          case 404: {
-            navigate(paths.root.notFound.getHref());
-            break;
-          }
-          case 500: {
-            toast.error("Unable to connect to server");
-            break;
-          }
-          default: {
-            toast.error(`An error has occurred. Error code: ${res}`);
-          }
-        }
-      } else {
-        if (playerRef !== null) {
-          await initHls({
-            id: playbackId,
-            token: res,
-            element: playerRef,
-            setIsPlaying: setIsPlaying,
-            onAutoplayFailed: () => setShowPlayButton(true),
-          });
-          playerRef.currentTime = 0;
-          playerRef.volume = 0.8;
-        }
+    const onWebkitenterfullscreen = () => {
+      setIsIosPlayer(true);
+    };
+    const onWebkitendfullscreen = () => {
+      hlsInstance.hlsInstance?.stopLoad();
+      hlsInstance.hlsInstance?.detachMedia();
+      hlsInstance.hlsInstance?.destroy();
+
+      if (playerRef) {
+        playerRef.pause();
+        playerRef.removeAttribute("src");
+        playerRef.load();
       }
+
+      navigate(-1);
     };
 
-    void (async () => await prePlaybackHandling())();
-  }, [playerRef]);
+    playerRef?.addEventListener(
+      "webkitenterfullscreen",
+      onWebkitenterfullscreen,
+    );
+    playerRef?.addEventListener("webkitendfullscreen", onWebkitendfullscreen);
+
+    return () => {
+      playerRef?.removeEventListener(
+        "webkitenterfullscreen",
+        onWebkitenterfullscreen,
+      );
+      playerRef?.removeEventListener(
+        "webkitendfullscreen",
+        onWebkitendfullscreen,
+      );
+
+      if (hlsInstance.hlsInstance) {
+        hlsInstance.hlsInstance.destroy();
+      }
+    };
+  }, [hlsInstance.hlsInstance, navigate, playerRef]);
 
   return (
     <div
@@ -129,6 +134,7 @@ export const HlsPlayer = ({ playbackId }: HlsPlayerProps) => {
     >
       <video
         ref={setPlayerRef}
+        disablePictureInPicture
         onTimeUpdate={(event) => {
           setVideoDuration(event.currentTarget.duration);
           setVideoCurrentTime(event.currentTarget.currentTime);
@@ -138,7 +144,7 @@ export const HlsPlayer = ({ playbackId }: HlsPlayerProps) => {
         }}
         className="w-full h-full object-contain bg-black"
       />
-      {!showPlayButton && showControls && (
+      {!showPlayButton && showControls && !isIosPlayer && (
         <div className="fixed bottom-2 z-50 w-screen flex flex-col gap-2 p-4 pointer-events-none">
           <div className="w-full flex flex-row gap-2 px-1">
             <p className="text-sm whitespace-nowrap">{`${formatTime(videoCurrentTime)} / ${formatTime(videoDuration)}`}</p>

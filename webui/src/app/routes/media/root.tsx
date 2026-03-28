@@ -20,7 +20,7 @@ import {
   type MusicListItem,
   type VideoListItem,
 } from "@/services/media/list.ts";
-import { MediaList } from "@/components/lists/music-list-item.tsx";
+import { MediaList } from "@/components/lists/media-list-item.tsx";
 
 export const MediaWrapper = () => {
   const path = useParams();
@@ -61,7 +61,7 @@ export const Media = ({ mediaType }: MediaProp) => {
   }, [mediaType, reloadTrigger]);
 
   return (
-    <div className="flex flex-col px-12 py-4">
+    <div className="flex flex-col px-8 md:px-12 py-4">
       <div className="flex flex-row w-full justify-between">
         <h2 className={"text-2xl font-semibold text-transform: capitalize"}>
           {mediaType}
