@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { uploadMedia } from "@/services/media/file-upload.ts";
+import { newItem } from "@/services/media/item-actions.ts";
 import {
   Field,
   FieldError,
@@ -15,41 +15,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { toast } from "sonner";
 import { useUpdateStore } from "@/store/upload.ts";
 import { Textarea } from "@/components/ui/textarea.tsx";
-
-export const videoSchema = z.object({
-  title: z
-    .string()
-    .normalize()
-    .min(1, "Field required.")
-    .max(256, "Field must not exceed 256 characters."),
-  creator: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(256, "Field must not exceed 256 characters."),
-  categories: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(256, "Field must not exceed 256 characters."),
-  language: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(256, "Field must not exceed 256 characters."),
-  region: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(256, "Field must not exceed 256 characters."),
-  description: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(1024, "Field must not exceed 1024 characters."),
-  file: z.file().optional(),
-  filename: z.string().normalize().optional(),
-});
+import { videoSchema } from "@/form-schemas/media-metadata.ts";
 
 interface UploadVideoFormProps {
   onExit: () => void;
@@ -81,7 +47,7 @@ const UploadVideoForm = ({ onExit }: UploadVideoFormProps) => {
     } else if (values.file === undefined) {
       toast.error("Please select a file");
     } else {
-      void uploadMedia({
+      void newItem({
         upload: { type: "video", data: values },
       });
       onExit();

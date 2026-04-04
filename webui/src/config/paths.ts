@@ -25,6 +25,10 @@ export const paths = {
         getHref: () => "/media/video",
       },
     },
+    mediaInfo: {
+      path: "media-info/:mediaId",
+      getHref: (id: string) => `/media-info/${id}`,
+    },
     login: {
       path: "login",
       getHref: () => "/login",

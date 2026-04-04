@@ -3,4 +3,4 @@ pub mod users;
 pub mod upload;
 pub mod models;
 pub mod serve;
-pub mod media;
+pub mod media_items;

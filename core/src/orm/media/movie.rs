@@ -2,7 +2,7 @@ use chrono::NaiveDate;
 use nanoid::nanoid;
 use sea_orm::{ActiveModelTrait, EntityTrait, IntoActiveModel, Set};
 use entity::entities::movie;
-use entity::entities::movie::{ActiveModel, Entity, ListPartialModel};
+use entity::entities::movie::{ActiveModel, Entity, ListPartialModel, Model};
 use crate::api::models::upload::UploadMetadataMovie;
 use crate::common::error::ApiError;
 use crate::{CONFIG, SHARED};
@@ -61,4 +61,9 @@ pub async fn get_movie_storage_path(id: &str) -> Result<String, ApiError> {
 pub async fn list_movie_metadata() -> Result<Vec<ListPartialModel>, ApiError> {
   let db_connection = &SHARED.get().unwrap().database_connection;
   Ok(Entity::find().into_partial_model().all(db_connection).await?)
+}
+
+pub async fn find_movie_metadata(id: &str) -> Result<Option<Model>, ApiError> {
+  let db_connection = &SHARED.get().unwrap().database_connection;
+  Ok(Entity::find_by_id(id).one(db_connection).await?)
 }

@@ -7,6 +7,38 @@ import type { movieSchema } from "@/components/forms/media-upload/movie.tsx";
 import { useUpdateStore } from "@/store/upload.ts";
 import { toast } from "sonner";
 
+interface DeleteItemProps {
+  media_id: string;
+}
+
+export const deleteItem = async ({ media_id }: DeleteItemProps) => {
+  try {
+    await fetcher.delete(`/api/media/metadata/${media_id}`);
+    toast.success(`Successfully deleted item ${media_id}`);
+  } catch (error) {
+    if (isAxiosError(error)) {
+      toast.error(() => {
+        switch (error.status || 500) {
+          case 401:
+            return "Session expired";
+          case 403:
+            return "Access denied";
+          case 404:
+            return "Item not found";
+          case 500:
+            return "Unable to connect to the server";
+          default:
+            return `An error has occurred. Error code: ${error.status || 500}`;
+        }
+      });
+      return error.status || 500;
+    } else {
+      toast.error("Unable to connect to the server");
+      return 500;
+    }
+  }
+};
+
 interface UploadFileProps {
   upload_id: string;
   file: Blob;
@@ -51,7 +83,7 @@ interface UploadMediaProps {
     | { type: "music"; data: z.infer<typeof musicSchema> };
 }
 
-export const uploadMedia = async ({ upload }: UploadMediaProps) => {
+export const newItem = async ({ upload }: UploadMediaProps) => {
   if (upload.data.file === undefined) return 400;
 
   const toastId = toast.loading("Uploading metadata...");
@@ -62,7 +94,7 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
     switch (upload.type) {
       case "music": {
         const meta_res = await fetcher.post<{ id: string }>(
-          "/api/media/upload/metadata",
+          "/api/media/metadata",
           {
             title: upload.data.title,
             artists:
@@ -108,7 +140,7 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
       }
       case "video": {
         const meta_res = await fetcher.post<{ id: string }>(
-          "/api/media/upload/metadata",
+          "/api/media/metadata",
           {
             title: upload.data.title,
             creator: upload.data.creator,
@@ -138,7 +170,7 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
       }
       case "movie": {
         const meta_res = await fetcher.post<{ id: string }>(
-          "/api/media/upload/metadata",
+          "/api/media/metadata",
           {
             title: upload.data.title,
             director: upload.data.director,
@@ -180,7 +212,9 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
     }
 
     useUpdateStore.setState({ uploadActive: false });
-    toast.success("Successfully uploaded media", { id: toastId });
+    toast.success("Successfully uploaded media. Reload the page to update.", {
+      id: toastId,
+    });
 
     return 200;
   } catch (error) {
@@ -189,8 +223,6 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
       toast.error(
         () => {
           switch (error.status || 500) {
-            case 400:
-              return "Invalid upload";
             case 401:
               return "Session expired";
             case 403:
@@ -198,7 +230,7 @@ export const uploadMedia = async ({ upload }: UploadMediaProps) => {
             case 404:
               return "Upload id not found";
             case 500:
-              return "Unable to upload to server";
+              return "Unable to upload to the server";
             default:
               return `An error has occurred. Error code: ${error.status || 500}`;
           }

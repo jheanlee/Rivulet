@@ -1,11 +1,11 @@
-use tokio::fs::{create_dir_all, read, remove_dir_all, remove_file, try_exists, write, File};
-use tokio::io;
+use tokio::fs::{create_dir_all, read, remove_file, try_exists, write, File};
 use tokio::io::AsyncWriteExt;
 use crate::common::error::ApiError;
 use crate::CONFIG;
-use crate::orm::movie::{delete_movie_metadata, get_movie_storage_path};
-use crate::orm::music::{delete_music_metadata, get_music_storage_path};
-use crate::orm::video::{delete_video_metadata, get_video_storage_path};
+use crate::file::tools::remove_dir_all_if_exists;
+use crate::orm::media::movie::{delete_movie_metadata, get_movie_storage_path};
+use crate::orm::media::music::{delete_music_metadata, get_music_storage_path};
+use crate::orm::media::video::{delete_video_metadata, get_video_storage_path};
 
 const CHUNK_SIZE: usize = 20 * 1024 * 1024;
 
@@ -82,14 +82,6 @@ pub async fn get_storage_path(upload_id: &str) -> Result<String, ApiError> {
     Err(ApiError::NotFound)
   } else {
     Ok(id)
-  }
-}
-
-async fn remove_dir_all_if_exists(path: &str) -> Result<(), ApiError> {
-  match remove_dir_all(path).await {
-    Ok(_) => Ok(()),
-    Err(ref error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
-    Err(err) => Err(err.into())
   }
 }
 

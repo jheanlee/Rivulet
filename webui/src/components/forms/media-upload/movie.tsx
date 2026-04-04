@@ -19,73 +19,10 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx";
 import { useState } from "react";
-import { uploadMedia } from "@/services/media/file-upload.ts";
+import { newItem } from "@/services/media/item-actions.ts";
 import { toast } from "sonner";
 import { useUpdateStore } from "@/store/upload.ts";
-
-export const movieSchema = z.object({
-  title: z
-    .string()
-    .normalize()
-    .min(1, "Field required.")
-    .max(256, "Field must not exceed 256 characters."),
-  director: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(256, "Field must not exceed 256 characters."),
-  cast: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(256, "Field must not exceed 256 characters."),
-  genres: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(256, "Field must not exceed 256 characters."),
-  language: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(256, "Field must not exceed 256 characters."),
-  region: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(256, "Field must not exceed 256 characters."),
-  release_date_year: z
-    .number()
-    .min(1900, "Field must be either empty or in the range of 1900-2100.")
-    .max(2100, "Field must be either empty or in the range of 1900-2100.")
-    .int("Field must be an integer.")
-    .optional(),
-  release_date_month: z
-    .number()
-    .min(1, "Field must be either empty or a valid month")
-    .max(12, "Field must be either empty or a valid month")
-    .int("Field must be an integer.")
-    .optional(),
-  release_date_day: z
-    .number()
-    .min(1, "Field must be either empty or a valid day")
-    .max(31, "Field must be either empty or a valid day")
-    .int("Field must be an integer.")
-    .optional(),
-  year: z
-    .number()
-    .min(1900, "Field must be either empty or in the range of 1900-2100.")
-    .max(2100, "Field must be either empty or in the range of 1900-2100.")
-    .int("Field must be an integer.")
-    .optional(),
-  description: z
-    .string()
-    .normalize()
-    .min(0)
-    .max(1024, "Field must not exceed 1024 characters."),
-  file: z.file().optional(),
-  filename: z.string().normalize().optional(),
-});
+import { movieSchema } from "@/form-schemas/media-metadata.ts";
 
 interface UploadMovieFormProps {
   onExit: () => void;
@@ -122,7 +59,7 @@ export const UploadMovieForm = ({ onExit }: UploadMovieFormProps) => {
     } else if (values.file === undefined) {
       toast.error("Please select a file");
     } else {
-      void uploadMedia({
+      void newItem({
         upload: { type: "movie", data: values },
       });
       onExit();

@@ -13,14 +13,24 @@ import {
 } from "@/components/ui/table.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Ellipsis, Info } from "lucide-react";
-import { useNavigate } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import { paths } from "@/config/paths.ts";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu.tsx";
+import { deleteItem } from "@/services/media/item-actions.ts";
 
 interface MediaListProps {
   type: "music" | "video" | "movie";
   items: MusicListItem[] | VideoListItem[] | MovieListItem[];
+  updateTrigger: () => void;
 }
-export const MediaList = ({ type, items }: MediaListProps) => {
+export const MediaList = ({ type, items, updateTrigger }: MediaListProps) => {
   const navigate = useNavigate();
 
   return (
@@ -68,15 +78,16 @@ export const MediaList = ({ type, items }: MediaListProps) => {
             switch (item.type) {
               case "music":
                 return (
-                  <TableRow
-                    key={item.id}
-                    className="w-full"
-                    onClick={() => navigate(paths.playback.getHref(item.id))}
-                  >
-                    <TableCell>
-                      <p className="overflow-hidden text-ellipsis">
+                  <TableRow key={item.id} className="w-full">
+                    <TableCell
+                      onClick={() => navigate(paths.playback.getHref(item.id))}
+                    >
+                      <NavLink
+                        to={paths.playback.getHref(item.id)}
+                        className="block overflow-hidden text-ellipsis whitespace-nowrap"
+                      >
                         {item.title}
-                      </p>
+                      </NavLink>
                     </TableCell>
                     <TableCell>
                       <p className="overflow-hidden text-ellipsis">
@@ -90,26 +101,53 @@ export const MediaList = ({ type, items }: MediaListProps) => {
                     </TableCell>
                     <TableCell className="flex justify-center">
                       <div className="flex flex-row gap-2">
-                        <Button variant="ghost">
+                        <Button
+                          variant="ghost"
+                          onClick={() =>
+                            navigate(paths.root.mediaInfo.getHref(item.id))
+                          }
+                        >
                           <Info />
                         </Button>
-                        <Button variant="ghost">
-                          <Ellipsis />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost">
+                              <Ellipsis />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {/* TODO hide if not admin */}
+                            <DropdownMenuGroup>
+                              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                                Admin actions
+                              </DropdownMenuLabel>
+                              <DropdownMenuItem>Edit</DropdownMenuItem>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={async () => {
+                                  await deleteItem({ media_id: item.id });
+                                  updateTrigger();
+                                }}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
                 );
               case "video":
                 return (
-                  <TableRow
-                    key={item.id}
-                    onClick={() => navigate(paths.playback.getHref(item.id))}
-                  >
+                  <TableRow key={item.id}>
                     <TableCell>
-                      <p className="overflow-hidden text-ellipsis">
+                      <NavLink
+                        to={paths.playback.getHref(item.id)}
+                        className="block overflow-hidden text-ellipsis whitespace-nowrap"
+                      >
                         {item.title}
-                      </p>
+                      </NavLink>
                     </TableCell>
                     <TableCell>
                       <p className="overflow-hidden text-ellipsis">
@@ -118,26 +156,55 @@ export const MediaList = ({ type, items }: MediaListProps) => {
                     </TableCell>
                     <TableCell className="flex justify-center">
                       <div className="flex flex-row gap-2">
-                        <Button variant="ghost">
+                        <Button
+                          variant="ghost"
+                          onClick={() =>
+                            navigate(paths.root.mediaInfo.getHref(item.id))
+                          }
+                        >
                           <Info />
                         </Button>
-                        <Button variant="ghost">
-                          <Ellipsis />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost">
+                              <Ellipsis />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {/* TODO hide if not admin */}
+                            <DropdownMenuGroup>
+                              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                                Admin actions
+                              </DropdownMenuLabel>
+                              <DropdownMenuItem>Edit</DropdownMenuItem>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={async () => {
+                                  await deleteItem({ media_id: item.id });
+                                  updateTrigger();
+                                }}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
                 );
               case "movie":
                 return (
-                  <TableRow
-                    key={item.id}
-                    onClick={() => navigate(paths.playback.getHref(item.id))}
-                  >
-                    <TableCell>
-                      <p className="overflow-hidden text-ellipsis">
+                  <TableRow key={item.id}>
+                    <TableCell
+                      onClick={() => navigate(paths.playback.getHref(item.id))}
+                    >
+                      <NavLink
+                        to={paths.playback.getHref(item.id)}
+                        className="block overflow-hidden text-ellipsis whitespace-nowrap"
+                      >
                         {item.title}
-                      </p>
+                      </NavLink>
                     </TableCell>
                     <TableCell>
                       <p className="overflow-hidden text-ellipsis">
@@ -146,12 +213,39 @@ export const MediaList = ({ type, items }: MediaListProps) => {
                     </TableCell>
                     <TableCell className="flex justify-center">
                       <div className="flex flex-row gap-2">
-                        <Button variant="ghost">
+                        <Button
+                          variant="ghost"
+                          onClick={() =>
+                            navigate(paths.root.mediaInfo.getHref(item.id))
+                          }
+                        >
                           <Info />
                         </Button>
-                        <Button variant="ghost">
-                          <Ellipsis />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost">
+                              <Ellipsis />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {/* TODO hide if not admin */}
+                            <DropdownMenuGroup>
+                              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                                Admin actions
+                              </DropdownMenuLabel>
+                              <DropdownMenuItem>Edit</DropdownMenuItem>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={async () => {
+                                  await deleteItem({ media_id: item.id });
+                                  updateTrigger();
+                                }}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>

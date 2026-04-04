@@ -48,7 +48,7 @@ export const Media = ({ mediaType }: MediaProp) => {
   >(undefined);
   const [reloadTrigger, setReloadTrigger] = useState<boolean>(false);
 
-  const onMusicFormExit = () => {
+  const onFormExit = () => {
     setUploadDialogOpen(false);
     setReloadTrigger(!reloadTrigger);
   };
@@ -95,15 +95,9 @@ export const Media = ({ mediaType }: MediaProp) => {
               <DialogTitle>Upload Media</DialogTitle>
             </VisuallyHidden>
             <DialogContent className="h-3/4 overflow-y-scroll">
-              {mediaType == "music" && (
-                <UploadMusicForm onExit={onMusicFormExit} />
-              )}
-              {mediaType == "video" && (
-                <UploadVideoForm onExit={onMusicFormExit} />
-              )}
-              {mediaType == "movie" && (
-                <UploadMovieForm onExit={onMusicFormExit} />
-              )}
+              {mediaType == "music" && <UploadMusicForm onExit={onFormExit} />}
+              {mediaType == "video" && <UploadVideoForm onExit={onFormExit} />}
+              {mediaType == "movie" && <UploadMovieForm onExit={onFormExit} />}
             </DialogContent>
           </Dialog>
         </div>
@@ -111,7 +105,11 @@ export const Media = ({ mediaType }: MediaProp) => {
 
       <div className="flex flex-col m-4">
         {mediaItems !== undefined && (
-          <MediaList type={mediaType} items={mediaItems} />
+          <MediaList
+            type={mediaType}
+            items={mediaItems}
+            updateTrigger={() => setReloadTrigger(!reloadTrigger)}
+          />
         )}
       </div>
     </div>

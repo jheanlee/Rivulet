@@ -7,7 +7,7 @@ use clap::Parser;
 use tokio::sync::{mpsc, OnceCell, RwLock};
 use tower_http::services::ServeDir;
 use crate::api::auth::{login, refresh_token, verify_admin, verify_jwt, verify_playback_token};
-use crate::api::media::list_media;
+use crate::api::media_items::{delete_media_item, list_media_items};
 use crate::api::serve::serve_media;
 use crate::api::upload::{upload_file, upload_metadata};
 use crate::api::users::{check_username_availability, delete_user, list_users, modify_user, new_user, reset_password, set_admin};
@@ -70,19 +70,21 @@ async fn main() {
   });
 
   let app = axum::Router::new()
-    .route("/api/users/check-username", get(check_username_availability))
     .route("/api/users", get(list_users))
     .route("/api/users", post(new_user))
+    .route("/api/users/check-username", get(check_username_availability))
     .route("/api/users/{user_id}", put(modify_user))
     .route("/api/users/{user_id}/set-admin", patch(set_admin))
     .route("/api/users/{user_id}/reset-password", patch(reset_password))
     .route("/api/users/{user_id}", delete(delete_user))
     .route("/api/media/upload", post(upload_file)
       .layer(DefaultBodyLimit::max(21 * 1024 * 1024)))
-    .route("/api/media/upload/metadata", post(upload_metadata))
+    .route("/api/media/metadata", post(upload_metadata))
+    // .route("/api/media/metadata/{media_id}", put(todo!()))
+    .route("/api/media/metadata/{media_id}", delete(delete_media_item))
     .layer(middleware::from_fn(verify_admin))
 
-    .route("/api/media/{media_type}", get(list_media))
+    .route("/api/media/{media_type}", get(list_media_items))
     .route("/api/media/{media_id}/serve", post(serve_media))
     .layer(middleware::from_fn(verify_jwt))
 

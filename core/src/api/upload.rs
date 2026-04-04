@@ -8,9 +8,9 @@ use serde_json::json;
 use crate::api::models::upload::{UploadMetadataMovie, UploadMetadataMusic, UploadMetadataVideo};
 use crate::common::error::ApiError;
 use crate::file::upload::{assemble_chunks, upload_cancel_cleanup, write_chunk};
-use crate::orm::movie::new_movie_metadata;
-use crate::orm::music::new_music_metadata;
-use crate::orm::video::new_video_metadata;
+use crate::orm::media::movie::new_movie_metadata;
+use crate::orm::media::music::new_music_metadata;
+use crate::orm::media::video::new_video_metadata;
 
 pub async fn upload_file(multipart: Multipart) -> Result<impl IntoResponse, ApiError> {
   match upload_file_priv(multipart).await {
